@@ -72,7 +72,7 @@ def _create_query_json(args,page=1):
     query1['operator'] = 'LIKE'
     query1['value'] = '%'
     queryDict['compoundQuery']['queries'].append(query1)
-    if not args.filetype:
+    if args.filetype:
         query2['attribute'] = 'file_type'
         query2['operator'] = 'EQUAL'
         ft = args.filetype
