@@ -51,7 +51,11 @@ def collect_args():
     return args
 
 def _create_random_json_path(args):
-    return args.tmpdir+os.sep+str(uuid.uuid4())+".json"
+    if args.tmpdir.endswith(os.sep):
+        return args.tmpdir+str(uuid.uuid4())+".json"
+    else:
+        return args.tmpdir+os.sep+str(uuid.uuid4())+".json"
+
 
 def _create_query_json(args,page=1):
     """
