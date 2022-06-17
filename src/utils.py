@@ -1,5 +1,6 @@
 import os
 import uuid
+import subprocess
 
 def _cmd_exists(cmd, path=None):
     """ test if path contains an executable file with name
