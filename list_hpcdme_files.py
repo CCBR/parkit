@@ -123,7 +123,7 @@ def _run_cmd(cmd):
         print("stderr:"+se)
         # se_test = "Error Code: 503" in se    
         # print("503:"+str(se_test))
-        exit('HPCDMEAPI CLU dm_query_dataobject failed! See REST-response [file following the -D option] for more details.")
+        exit('HPCDMEAPI CLU dm_query_dataobject failed! See REST-response [file following the -D option] for more details.')
 
 def run_query(args):
     """
