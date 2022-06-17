@@ -94,7 +94,7 @@ def rename(args):
     files2delete.append(rest_response)
     cmd = _create_cmd(ojson,rest_response)
     errormsg = 'HPCDMEAPI CLU dm_rename failed! See REST-response [file following the -D option] for more details.'
-    run_cmd(cmd,errormsg)
+    # run_cmd(cmd,errormsg)
     delete_listoffiles(files2delete)
 
 
