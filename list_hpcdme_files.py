@@ -108,7 +108,7 @@ def _run_cmd(cmd):
     run the cmd with subprocess and check for errors
     """
     print(cmd)
-    proc=subprocess.run(cmd,shell=True,capture_output=True)
+    proc=subprocess.run(cmd,shell=True,capture_output=True,text=True)
     print("returncode:"+str(proc.returncode))
     so = str(proc.stdout)
     so_test = "Error Code: 503" in so
