@@ -4,7 +4,7 @@
 Get a complete list of objects in HPCDME at a specified location in a given vault.
 The result can be filtered for a user-specified filetype.
 Usage:
-   % list_hpcdme_files -p /Vault/Path [-t <filetype>]
+   % list_hpcdme_files [-h] -p ARCHIVEPATH -o OUTFILE [-f FILETYPE] [-t TMPDIR]
 Example:
     Save all fastq file paths in /CCBR_Archive vaults' GRIDFTP collection to a file named all_fastqs.txt
     % list_hpcdme_files -p /CCBR_Archive/GRIDFTP -o all_fastqs.txt -f fastq
@@ -19,21 +19,10 @@ import json
 import uuid
 import subprocess
 
+from src.utils import *
+
 PAGESIZE = 10000
 
-def _cmd_exists(cmd, path=None):
-    """ test if path contains an executable file with name
-    """
-    if path is None:
-        path = os.environ["PATH"].split(os.pathsep)
-
-    for prefix in path:
-        filename = os.path.join(prefix, cmd)
-        executable = os.access(filename, os.X_OK)
-        is_not_directory = os.path.isfile(filename)
-        if executable and is_not_directory:
-            return True
-    return False
 
 def collect_args():
     """
@@ -54,12 +43,6 @@ def collect_args():
 
     args = parser.parse_args()
     return args
-
-def _create_random_path(args,extension): 
-    if args.tmpdir.endswith(os.sep):
-        return args.tmpdir+str(uuid.uuid4())+extension
-    else:
-        return args.tmpdir+os.sep+str(uuid.uuid4())+extension
 
 def _create_query_json(args,page=1):
     """
@@ -89,15 +72,13 @@ def _create_query_json(args,page=1):
         query2['value'] = ft.upper()
         queryDict['compoundQuery']['queries'].append(query2)
     
-    json_file_path = _create_random_path(args,".json")
+    json_file_path = _create_random_path(args.tmpdir,".json")
     outfile = open(json_file_path, "w")
     json.dump(queryDict, outfile, indent = 6)
     outfile.close()
     return json_file_path
 
-def check_path():
-    if not _cmd_exists('dm_query_dataobject'):
-        exit('HPCDMEAPIs are not setup correctly! dm_query_dataobject is not in PATH.')
+
 
 def _create_cmd(qjson,ojson,rest_response,args):
     cmd = "dm_query_dataobject"
@@ -109,24 +90,7 @@ def _create_cmd(qjson,ojson,rest_response,args):
     cmd += args.archivepath
     return cmd
 
-def _run_cmd(cmd):
-    """
-    run the cmd with subprocess and check for errors
-    """
-    print(cmd)
-    proc = subprocess.run(cmd,shell=True,capture_output=True,text=True)
-    exitcode = str(proc.returncode)
-    if exitcode != '0':
-        print("returncode:"+exitcode)
-        so = str(proc.stdout)
-        # so_test = "Error Code: 503" in so
-        print("stdout:"+so)
-        # print("503:"+str(so_test))
-        se = str(proc.stderr)
-        print("stderr:"+se)
-        # se_test = "Error Code: 503" in se    
-        # print("503:"+str(se_test))
-        exit('HPCDMEAPI CLU dm_query_dataobject failed! See REST-response [file following the -D option] for more details.')
+
 
 def run_query(args):
     """
@@ -138,15 +102,16 @@ def run_query(args):
     files2delete = []
     qjson = _create_query_json(args)
     data_objects = []
-    page1json = _create_random_path(args,".json")
-    rest_response = _create_random_path(args,".txt")
+    page1json = _create_random_path(args.tmpdir,".json")
+    rest_response = _create_random_path(args.tmpdir,".txt")
     files2delete.append(qjson)
     files2delete.append(page1json)
     files2delete.append(rest_response)
     cmd = _create_cmd(qjson,page1json,rest_response,args)
     # print(cmd)
     # subprocess.run(cmd,shell=True,capture_output=True)
-    _run_cmd(cmd)
+    errormsg = 'HPCDMEAPI CLU dm_query_dataobject failed! See REST-response [file following the -D option] for more details.'
+    _run_cmd(cmd,errormsg)
     with open(page1json) as page1output:
         page1dict = json.load(page1output)
         data_objects.extend(page1dict['dataObjectPaths'])
@@ -155,14 +120,14 @@ def run_query(args):
         total_pages = int(total_count/PAGESIZE) + 1
         for page in range(2,total_pages+1):
             qjson = _create_query_json(args,page)
-            ojson = _create_random_path(args,".json")
+            ojson = _create_random_path(args.tmpdir,".json")
             files2delete.append(qjson)
             files2delete.append(ojson)
             files2delete.append(rest_response)
             cmd = _create_cmd(qjson,ojson,args)
             # print(cmd)
             # subprocess.run(cmd,shell=True,capture_output=True)
-            _run_cmd(cmd)
+            _run_cmd(cmd,errormsg)
             with open(ojson) as output:
                 outdict = json.load(output)
                 data_objects.extend(outdict['dataObjectPaths'])    
@@ -190,7 +155,7 @@ def _cleanup(files2delete):
 
 def main():
     # check if HPCDME set up correctly
-    check_path()
+    check_path('dm_query_dataobject')
     # Collect args 
     args = collect_args()
     # run the query
