@@ -119,18 +119,19 @@ def run_query(args):
         page1dict = json.load(page1output)
         data_objects.extend(page1dict['dataObjectPaths'])
     total_count = page1dict['totalCount']
-    total_pages = int(total_count/100) + 1
-    for page in range(2,total_pages+1):
-        qjson = _create_query_json(args,page)
-        ojson = _create_random_json_path(args)
-        jsons2delete.append(qjson)
-        jsons2delete.append(ojson)
-        cmd = _create_cmd(qjson,ojson,args)
-        print(cmd)
-        subprocess.run(cmd,shell=True,capture_output=True)
-        with open(ojson) as output:
-            outdict = json.load(output)
-            data_objects.extend(outdict['dataObjectPaths'])    
+    if total_count > 100:
+        total_pages = int(total_count/100) + 1
+        for page in range(2,total_pages+1):
+            qjson = _create_query_json(args,page)
+            ojson = _create_random_json_path(args)
+            jsons2delete.append(qjson)
+            jsons2delete.append(ojson)
+            cmd = _create_cmd(qjson,ojson,args)
+            print(cmd)
+            subprocess.run(cmd,shell=True,capture_output=True)
+            with open(ojson) as output:
+                outdict = json.load(output)
+                data_objects.extend(outdict['dataObjectPaths'])    
     _write_objects(data_objects)
     _cleanup(jsons2delete)
 
@@ -154,9 +155,6 @@ def _cleanup(files2delete):
 
 
 def main():
-
-    # files to delete ... make a list
-    delfiles = []
     # check if HPCDME set up correctly
     check_path()
     # Collect args 
