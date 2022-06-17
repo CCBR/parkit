@@ -14,6 +14,7 @@ import argparse
 import os
 import json
 import uuid
+import subprocess
 
 def _cmd_exists(cmd, path=None):
     """ test if path contains an executable file with name
@@ -38,6 +39,8 @@ def collect_args():
     parser = argparse.ArgumentParser(description='List.')
     parser.add_argument('-p', dest='archivepath', required=True,
         help='Archive Path')
+    parser.add_argument('-o', dest='outfile', required=True,
+        help='Outfile Path with one dataobject per line')
     parser.add_argument('-f', dest='filetype', required=False,
         help='Extension of files to output eg. FASTQ')
     parser.add_argument('-t', dest='tmpdir', required=False, default = '/dev/shm',
@@ -47,7 +50,10 @@ def collect_args():
     args = parser.parse_args()
     return args
 
-def create_json(args):
+def _create_random_json_path(args):
+    return args.tmpdir+os.sep+str(uuid.uuid4())+".json"
+
+def _create_query_json(args,page=1):
     """
     Create the json required for query
     """
@@ -55,7 +61,7 @@ def create_json(args):
     # import uuid
     # import os
     queryDict = dict()
-    queryDict['page'] = 1
+    queryDict['page'] = page
     queryDict['totalCount'] = True
     queryDict['detailedResponse'] = False
     queryDict['compoundQuery'] = dict()
@@ -69,16 +75,75 @@ def create_json(args):
     if not args.filetype:
         query2['attribute'] = 'file_type'
         query2['operator'] = 'EQUAL'
-        query2['value'] = 'FASTQ'
+        ft = args.filetype
+        query2['value'] = ft.upper()
         queryDict['compoundQuery']['queries'].append(query2)
     
-    json_file_path = args.tmpdir+os.sep+str(uuid.uuid4())+".json"
+    json_file_path = _create_random_json_path(args)
     out_file = open(json_file_path, "w")
     json.dump(queryDict, out_file, indent = 6)
     out_file.close()
     return json_file_path
+
+def check_path():
+    if not _cmd_exists('dm_query_dataobject'):
+        exit('HPCDMEAPIs are not setup correctly! dm_query_dataobject is not in PATH.')
+
+def _create_cmd(qjson,ojson,args):
+    cmd = "dm_query_dataobject -o "
+    cmd += ojson
+    cmd += " "
+    cmd += qjson
+    cmd += " "
+    cmd += args.archivepath
+    return cmd
+
+def run_query(args):
+    """
+    a. run query page by page
+    b. collect all output data objects into a list
+    c. write data objects (one per line) to output file
+    d. cleanup
+    """
+    jsons2delete = []
+    qjson = _create_query_json(args)
+    jsons2delete.append(qjson)
+    data_objects = []
+    page1json = _create_random_json_path(args)
+    jsons2delete.append(page1json)
+    cmd = _create_cmd(qjson,page1json,args)
+    print(cmd)
+    subprocess.run(cmd,shell=True,capture_output=True)
+    with open(page1json) as page1output:
+        page1dict = json.load(page1output)
+        data_objects.extend(page1dict['dataObjectPaths'])
+    total_count = page1dict['totalCount']
+    total_pages = total_count/100 + 1
+    for page in range(2,total_pages+1):
+        qjson = _create_query_json(args,page)
+        ojson = _create_random_json_path(args)
+        jsons2delete.append(qjson)
+        jsons2delete.append(ojson)
+        cmd = _create_cmd(qjson,ojson,args)
+        print(cmd)
+        subprocess.run(cmd,shell=True,capture_output=True)
+        with open(ojson) as output:
+            outdict = json.load(output)
+            data_objects.extend(outdict['dataObjectPaths'])    
+    _write_objects(data_objects)
+    _cleanup(jsons2delete)
+
+def _write_objects(data_objects,args):
+    """
+    write list of data objects to output file
+    one object per line
+    """
+    with open(args.out_file, 'w') as fp:
+    for obj in data_objects:
+        fp.write("%s\n" % obj)
+
             
-def cleanup(files2delete):
+def _cleanup(files2delete):
     """
     Deletes all the files in the provided list.
     """
@@ -92,16 +157,11 @@ def main():
     # files to delete ... make a list
     delfiles = []
     # check if HPCDME set up correctly
-    if not _cmd_exists('dm_query_dataobject1'):
-        exit('HPCDMEAPIs are not setup correctly! dm_query_dataobject is not in PATH.')
+    check_path()
     # Collect args 
     args = collect_args()
-    # Create the query json
-    qjson = create_json(args)
-    delfiles.append(qjson)
-    print(qjson)
-    # delete temp files
-    # cleanup(delfiles)
+    # run the query
+    run_query(args)
 
 
 if __name__ == '__main__':
