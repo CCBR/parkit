@@ -104,7 +104,7 @@ def main():
     # Collect args 
     args = collect_args()
     # run the query
-    run_query(args)
+    rename(args)
 
 
 if __name__ == '__main__':
