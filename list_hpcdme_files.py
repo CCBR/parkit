@@ -113,11 +113,11 @@ def _run_cmd(cmd):
     so = str(proc.stdout)
     so_test = "Error Code: 503" in so
     print("stdout:"+so)
-    print("503:"+so_test)
+    print("503:"+str(so_test))
     se = str(proc.stderr)
     se_test = "Error Code: 503" in se
     print("stderr:"+se)
-    print("503:"+se_test)
+    print("503:"+str(se_test))
 
 def run_query(args):
     """
