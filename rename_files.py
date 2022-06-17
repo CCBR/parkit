@@ -47,16 +47,20 @@ def _create_query_json(tsv,ojson):
     """
     queryDict = dict()
     queryDict['moveRequests'] = list()
+    n=1
     with open(tsv,'r') as t:
+        n += 1
         l = t.readline()
         l = l.strip().split("\t")
         entry = dict()
         entry['sourcePath'] = l[0]
         entry['destinationPath'] = l[1]
         queryDict['moveRequests'].append(entry)
+    print(n)
     outfile = open(ojson, "w")
     json.dump(queryDict, outfile, indent = 6)
     outfile.close()
+    exit()
     return True
 
 def _create_cmd(ojson,rest_response):
