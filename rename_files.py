@@ -47,18 +47,15 @@ def _create_query_json(tsv,ojson):
     """
     queryDict = dict()
     queryDict['moveRequests'] = list()
-    n=1
     t = list(map(lambda x:x.strip().split("\t"),open(tsv,'r').readlines()))
     for l in t:
         entry = dict()
         entry['sourcePath'] = l[0]
         entry['destinationPath'] = l[1]
         queryDict['moveRequests'].append(entry)
-    print(n)
     outfile = open(ojson, "w")
     json.dump(queryDict, outfile, indent = 6)
     outfile.close()
-    exit()
     return True
 
 def _create_cmd(ojson,rest_response):
@@ -96,7 +93,7 @@ def rename(args):
     files2delete.append(rest_response)
     cmd = _create_cmd(ojson,rest_response)
     errormsg = 'HPCDMEAPI CLU dm_rename failed! See REST-response [file following the -D option] for more details.'
-    # run_cmd(cmd,errormsg)
+    run_cmd(cmd,errormsg)
     delete_listoffiles(files2delete)
 
 
