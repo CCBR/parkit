@@ -139,8 +139,8 @@ def _write_objects(data_objects,args):
     one object per line
     """
     with open(args.out_file, 'w') as fp:
-    for obj in data_objects:
-        fp.write("%s\n" % obj)
+        for obj in data_objects:
+            fp.write("%s\n" % obj)
 
             
 def _cleanup(files2delete):
