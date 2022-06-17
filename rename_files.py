@@ -46,7 +46,7 @@ def _create_query_json(tsv,ojson):
     Create the json required for query
     """
     queryDict = dict()
-    queryDict['moveRequests"'] = list()
+    queryDict['moveRequests'] = list()
     with open(tsv,'r') as t:
         l = t.readline()
         l = l.strip().split("\t")
