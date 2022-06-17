@@ -99,7 +99,7 @@ def main():
     # Create the query json
     qjson = create_json(args)
     delfiles.append(qjson)
-    print(json)
+    print(qjson)
     # delete temp files
     # cleanup(delfiles)
 
