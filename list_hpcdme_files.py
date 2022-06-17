@@ -16,6 +16,8 @@ import json
 import uuid
 import subprocess
 
+PAGESIZE = 10000
+
 def _cmd_exists(cmd, path=None):
     """ test if path contains an executable file with name
     """
@@ -50,12 +52,11 @@ def collect_args():
     args = parser.parse_args()
     return args
 
-def _create_random_json_path(args):
+def _create_random_path(args,extension):
     if args.tmpdir.endswith(os.sep):
-        return args.tmpdir+str(uuid.uuid4())+".json"
+        return args.tmpdir+str(uuid.uuid4())+extension
     else:
-        return args.tmpdir+os.sep+str(uuid.uuid4())+".json"
-
+        return args.tmpdir+os.sep+str(uuid.uuid4())+extension
 
 def _create_query_json(args,page=1):
     """
@@ -66,6 +67,7 @@ def _create_query_json(args,page=1):
     # import os
     queryDict = dict()
     queryDict['page'] = page
+    queryDict['pageSize'] = PAGESIZE
     queryDict['totalCount'] = True
     queryDict['detailedResponse'] = False
     queryDict['compoundQuery'] = dict()
@@ -84,7 +86,7 @@ def _create_query_json(args,page=1):
         query2['value'] = ft.upper()
         queryDict['compoundQuery']['queries'].append(query2)
     
-    json_file_path = _create_random_json_path(args)
+    json_file_path = _create_random_path(args,".json")
     out_file = open(json_file_path, "w")
     json.dump(queryDict, out_file, indent = 6)
     out_file.close()
@@ -94,9 +96,10 @@ def check_path():
     if not _cmd_exists('dm_query_dataobject'):
         exit('HPCDMEAPIs are not setup correctly! dm_query_dataobject is not in PATH.')
 
-def _create_cmd(qjson,ojson,args):
-    cmd = "dm_query_dataobject -o "
-    cmd += ojson
+def _create_cmd(qjson,ojson,rest_response,args):
+    cmd = "dm_query_dataobject"
+    cmd += " -D " + rest_response
+    cmd += " -o " + ojson
     cmd += " "
     cmd += qjson
     cmd += " "
@@ -109,15 +112,17 @@ def _run_cmd(cmd):
     """
     print(cmd)
     proc=subprocess.run(cmd,shell=True,capture_output=True,text=True)
-    print("returncode:"+str(proc.returncode))
-    so = str(proc.stdout)
-    so_test = "Error Code: 503" in so
-    print("stdout:"+so)
-    print("503:"+str(so_test))
-    se = str(proc.stderr)
-    se_test = "Error Code: 503" in se
-    print("stderr:"+se)
-    print("503:"+str(se_test))
+    if proc.returncode!=0:
+        print("returncode:"+str(proc.returncode))
+        so = str(proc.stdout)
+        # so_test = "Error Code: 503" in so
+        print("stdout:"+so)
+        # print("503:"+str(so_test))
+        se = str(proc.stderr)
+        print("stderr:"+se)
+        # se_test = "Error Code: 503" in se    
+        # print("503:"+str(se_test))
+        exit('HPCDMEAPI CLU dm_query_dataobject failed! See REST-response [file following the -D option] for more details.)
 
 def run_query(args):
     """
@@ -126,13 +131,15 @@ def run_query(args):
     c. write data objects (one per line) to output file
     d. cleanup
     """
-    jsons2delete = []
+    files2delete = []
     qjson = _create_query_json(args)
-    jsons2delete.append(qjson)
     data_objects = []
-    page1json = _create_random_json_path(args)
-    jsons2delete.append(page1json)
-    cmd = _create_cmd(qjson,page1json,args)
+    page1json = _create_random_path(args,".json")
+    rest_response = _create_random_path(args,".txt")
+    files2delete.append(qjson)
+    files2delete.append(page1json)
+    files2delete.append(rest_response)
+    cmd = _create_cmd(qjson,page1json,rest_response,args)
     # print(cmd)
     # subprocess.run(cmd,shell=True,capture_output=True)
     _run_cmd(cmd)
@@ -140,13 +147,14 @@ def run_query(args):
         page1dict = json.load(page1output)
         data_objects.extend(page1dict['dataObjectPaths'])
     total_count = page1dict['totalCount']
-    if total_count > 100:
-        total_pages = int(total_count/100) + 1
+    if total_count > PAGESIZE:
+        total_pages = int(total_count/PAGESIZE) + 1
         for page in range(2,total_pages+1):
             qjson = _create_query_json(args,page)
-            ojson = _create_random_json_path(args)
-            jsons2delete.append(qjson)
-            jsons2delete.append(ojson)
+            ojson = _create_random_path(args,".json")
+            files2delete.append(qjson)
+            files2delete.append(ojson)
+            files2delete.append(rest_response)
             cmd = _create_cmd(qjson,ojson,args)
             # print(cmd)
             # subprocess.run(cmd,shell=True,capture_output=True)
@@ -155,7 +163,7 @@ def run_query(args):
                 outdict = json.load(output)
                 data_objects.extend(outdict['dataObjectPaths'])    
     _write_objects(data_objects)
-    _cleanup(jsons2delete)
+    _cleanup(files2delete)
 
 def _write_objects(data_objects,args):
     """
