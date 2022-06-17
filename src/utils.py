@@ -19,7 +19,7 @@ def check_path(executable):
     if not _cmd_exists(executable):
         exit('HPCDMEAPIs are not setup correctly! %s is not in PATH.'%(executable))
 
-def _create_random_path(tmpdir,extension):
+def create_random_path(tmpdir,extension):
     """
     create random file name with the provided extension in the provided folder
     """ 
@@ -28,7 +28,7 @@ def _create_random_path(tmpdir,extension):
     else:
         return tmpdir+os.sep+str(uuid.uuid4())+extension
 
-def _run_cmd(cmd,errormsg):
+def run_cmd(cmd,errormsg):
     """
     run the cmd with subprocess and check for errors
     """
@@ -46,3 +46,11 @@ def _run_cmd(cmd,errormsg):
         # se_test = "Error Code: 503" in se    
         # print("503:"+str(se_test))
         exit(errormsg)
+
+def delete_listoffiles(files2delete):
+    """
+    Deletes all the files in the provided list.
+    """
+    # import os
+    for file in files2delete:
+        os.remove(file)

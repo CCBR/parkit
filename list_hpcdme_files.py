@@ -72,7 +72,7 @@ def _create_query_json(args,page=1):
         query2['value'] = ft.upper()
         queryDict['compoundQuery']['queries'].append(query2)
     
-    json_file_path = _create_random_path(args.tmpdir,".json")
+    json_file_path = create_random_path(args.tmpdir,".json")
     outfile = open(json_file_path, "w")
     json.dump(queryDict, outfile, indent = 6)
     outfile.close()
@@ -102,8 +102,8 @@ def run_query(args):
     files2delete = []
     qjson = _create_query_json(args)
     data_objects = []
-    page1json = _create_random_path(args.tmpdir,".json")
-    rest_response = _create_random_path(args.tmpdir,".txt")
+    page1json = create_random_path(args.tmpdir,".json")
+    rest_response = create_random_path(args.tmpdir,".txt")
     files2delete.append(qjson)
     files2delete.append(page1json)
     files2delete.append(rest_response)
@@ -111,7 +111,7 @@ def run_query(args):
     # print(cmd)
     # subprocess.run(cmd,shell=True,capture_output=True)
     errormsg = 'HPCDMEAPI CLU dm_query_dataobject failed! See REST-response [file following the -D option] for more details.'
-    _run_cmd(cmd,errormsg)
+    run_cmd(cmd,errormsg)
     with open(page1json) as page1output:
         page1dict = json.load(page1output)
         data_objects.extend(page1dict['dataObjectPaths'])
@@ -120,19 +120,19 @@ def run_query(args):
         total_pages = int(total_count/PAGESIZE) + 1
         for page in range(2,total_pages+1):
             qjson = _create_query_json(args,page)
-            ojson = _create_random_path(args.tmpdir,".json")
+            ojson = create_random_path(args.tmpdir,".json")
             files2delete.append(qjson)
             files2delete.append(ojson)
             files2delete.append(rest_response)
             cmd = _create_cmd(qjson,ojson,args)
             # print(cmd)
             # subprocess.run(cmd,shell=True,capture_output=True)
-            _run_cmd(cmd,errormsg)
+            run_cmd(cmd,errormsg)
             with open(ojson) as output:
                 outdict = json.load(output)
                 data_objects.extend(outdict['dataObjectPaths'])    
     _write_objects(data_objects,args)
-    _cleanup(files2delete)
+    delete_listoffiles(files2delete)
 
 def _write_objects(data_objects,args):
     """
@@ -142,16 +142,6 @@ def _write_objects(data_objects,args):
     with open(args.outfile, 'w') as fp:
         for obj in data_objects:
             fp.write("%s\n" % obj)
-
-            
-def _cleanup(files2delete):
-    """
-    Deletes all the files in the provided list.
-    """
-    # import os
-    for file in files2delete:
-        os.remove(file)
-
 
 def main():
     # check if HPCDME set up correctly
