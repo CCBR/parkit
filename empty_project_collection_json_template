@@ -1,0 +1,53 @@
+{
+    "metadataEntries": [
+        {
+         "attribute": "collection_type",
+         "value": "Project"
+        },
+        {
+         "attribute": "project_start_date",
+         "value": "DATE",
+         "dateFormat": "yyyyMMdd"
+        },
+        {
+         "attribute": "access",
+         "value": "Open Access"
+        },
+        {
+         "attribute": "method",
+         "value": "NGS"
+        },
+        {
+         "attribute": "origin",
+         "value": "CCBR"
+        },
+        {
+         "attribute": "project_affiliation",
+         "value": "CCBR"
+        },
+        {
+         "attribute": "project_description",
+         "value": "PROJECTDESCRIPTION"
+        },
+        {
+         "attribute": "project_status",
+         "value": "Completed"
+        },
+        {
+         "attribute": "retention_years",
+         "value": "7"
+        },
+        {
+         "attribute": "project_title",
+         "value": "PROJECTTITLE"
+        },
+        {
+         "attribute": "summary_of_samples",
+         "value": "Unknown"
+        },
+        {
+         "attribute": "organism",
+         "value": "Unknown"
+        }
+    ]
+}
