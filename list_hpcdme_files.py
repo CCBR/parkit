@@ -103,6 +103,22 @@ def _create_cmd(qjson,ojson,args):
     cmd += args.archivepath
     return cmd
 
+def _run_cmd(cmd):
+    """
+    run the cmd with subprocess and check for errors
+    """
+    print(cmd)
+    proc=subprocess.run(cmd,shell=True,capture_output=True)
+    print("returncode:"+proc.returncode)
+    print("stdout:"+proc.stdout)
+    so = proc.stdout
+    so_test = "Error Code: 503" in so
+    print("503:"+so_test)
+    se = proc.stderr
+    se_test = "Error Code: 503" in se
+    print("stderr:"+proc.stderr)
+    print("503:"+se_test)
+
 def run_query(args):
     """
     a. run query page by page
@@ -117,8 +133,9 @@ def run_query(args):
     page1json = _create_random_json_path(args)
     jsons2delete.append(page1json)
     cmd = _create_cmd(qjson,page1json,args)
-    print(cmd)
-    subprocess.run(cmd,shell=True,capture_output=True)
+    # print(cmd)
+    # subprocess.run(cmd,shell=True,capture_output=True)
+    _run_cmd(cmd)
     with open(page1json) as page1output:
         page1dict = json.load(page1output)
         data_objects.extend(page1dict['dataObjectPaths'])
@@ -131,8 +148,9 @@ def run_query(args):
             jsons2delete.append(qjson)
             jsons2delete.append(ojson)
             cmd = _create_cmd(qjson,ojson,args)
-            print(cmd)
-            subprocess.run(cmd,shell=True,capture_output=True)
+            # print(cmd)
+            # subprocess.run(cmd,shell=True,capture_output=True)
+            _run_cmd(cmd)
             with open(ojson) as output:
                 outdict = json.load(output)
                 data_objects.extend(outdict['dataObjectPaths'])    
