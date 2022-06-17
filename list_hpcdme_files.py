@@ -119,7 +119,7 @@ def run_query(args):
         page1dict = json.load(page1output)
         data_objects.extend(page1dict['dataObjectPaths'])
     total_count = page1dict['totalCount']
-    total_pages = total_count/100 + 1
+    total_pages = int(total_count/100) + 1
     for page in range(2,total_pages+1):
         qjson = _create_query_json(args,page)
         ojson = _create_random_json_path(args)
