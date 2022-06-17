@@ -48,10 +48,8 @@ def _create_query_json(tsv,ojson):
     queryDict = dict()
     queryDict['moveRequests'] = list()
     n=1
-    with open(tsv,'r') as t:
-        n += 1
-        l = t.readline()
-        l = l.strip().split("\t")
+    t = list(map(lambda x:x.strip().split("\t"),open(tsv,'r').readlines()))
+    for l in t:
         entry = dict()
         entry['sourcePath'] = l[0]
         entry['destinationPath'] = l[1]
