@@ -92,7 +92,7 @@ def main():
     # files to delete ... make a list
     delfiles = []
     # check if HPCDME set up correctly
-    if not _cmd_exists('dm_query_dataobject'):
+    if not _cmd_exists('dm_query_dataobject1'):
         exit('HPCDMEAPIs are not setup correctly! dm_query_dataobject is not in PATH.')
     # Collect args 
     args = collect_args()
