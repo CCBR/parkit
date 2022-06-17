@@ -52,7 +52,7 @@ def collect_args():
     args = parser.parse_args()
     return args
 
-def _create_random_path(args,extension):
+def _create_random_path(args,extension): 
     if args.tmpdir.endswith(os.sep):
         return args.tmpdir+str(uuid.uuid4())+extension
     else:
@@ -111,9 +111,10 @@ def _run_cmd(cmd):
     run the cmd with subprocess and check for errors
     """
     print(cmd)
-    proc=subprocess.run(cmd,shell=True,capture_output=True,text=True)
-    if proc.returncode!=0:
-        print("returncode:"+str(proc.returncode))
+    proc = subprocess.run(cmd,shell=True,capture_output=True,text=True)
+    exitcode = str(proc.returncode)
+    if exitcode != '0':
+        print("returncode:"+exitcode)
         so = str(proc.stdout)
         # so_test = "Error Code: 503" in so
         print("stdout:"+so)
