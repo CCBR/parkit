@@ -109,7 +109,7 @@ def _run_cmd(cmd):
     """
     print(cmd)
     proc=subprocess.run(cmd,shell=True,capture_output=True)
-    print("returncode:"+proc.returncode)
+    print("returncode:"+str(proc.returncode))
     print("stdout:"+proc.stdout)
     so = proc.stdout
     so_test = "Error Code: 503" in so
