@@ -4,7 +4,10 @@
 Get a complete list of objects in HPCDME at a specified location in a given vault.
 The result can be filtered for a user-specified filetype.
 Usage:
-   $ list_hpcdme_files -p /Vault/Path [-t <filetype>]
+   % list_hpcdme_files -p /Vault/Path [-t <filetype>]
+Example:
+    Save all fastq file paths in /CCBR_Archive vaults' GRIDFTP collection to a file named all_fastqs.txt
+    % list_hpcdme_files -p /CCBR_Archive/GRIDFTP -o all_fastqs.txt -f fastq
 """
 
 __author__ = 'Vishal Koparde'
