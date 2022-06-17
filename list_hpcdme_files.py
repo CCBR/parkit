@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
 """
-Get a complete list of objects in HPCDME at a specified location in a given vault.
+Get a complete list of objects in HPCDME at a specified collection in a given vault.
 The result can be filtered for a user-specified filetype.
 Usage:
    % list_hpcdme_files [-h] -p ARCHIVEPATH -o OUTFILE [-f FILETYPE] [-t TMPDIR]
@@ -30,7 +30,7 @@ def collect_args():
     """
     # import argparse
 
-    parser = argparse.ArgumentParser(description='List.')
+    parser = argparse.ArgumentParser(description='list of objects in HPCDME collection.')
     parser.add_argument('-p', dest='archivepath', required=True,
         help='Archive Path')
     parser.add_argument('-o', dest='outfile', required=True,
