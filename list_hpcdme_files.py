@@ -163,7 +163,7 @@ def run_query(args):
             with open(ojson) as output:
                 outdict = json.load(output)
                 data_objects.extend(outdict['dataObjectPaths'])    
-    _write_objects(data_objects)
+    _write_objects(data_objects,args)
     _cleanup(files2delete)
 
 def _write_objects(data_objects,args):
