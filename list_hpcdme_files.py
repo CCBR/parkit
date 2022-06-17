@@ -87,9 +87,9 @@ def _create_query_json(args,page=1):
         queryDict['compoundQuery']['queries'].append(query2)
     
     json_file_path = _create_random_path(args,".json")
-    out_file = open(json_file_path, "w")
-    json.dump(queryDict, out_file, indent = 6)
-    out_file.close()
+    outfile = open(json_file_path, "w")
+    json.dump(queryDict, outfile, indent = 6)
+    outfile.close()
     return json_file_path
 
 def check_path():
@@ -171,7 +171,7 @@ def _write_objects(data_objects,args):
     write list of data objects to output file
     one object per line
     """
-    with open(args.out_file, 'w') as fp:
+    with open(args.outfile, 'w') as fp:
         for obj in data_objects:
             fp.write("%s\n" % obj)
 
