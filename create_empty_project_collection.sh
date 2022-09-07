@@ -2,7 +2,7 @@
 
 path_to_executable=$(which dm_register_collection)
 if [ ! -x "$path_to_executable" ] ; then
-#HPCDME toolkit setup
+HPCDME toolkit setup
 export HPC_DM_UTILS=/data/kopardevn/SandBox/HPC_DME_APIs/utils
 source $HPC_DM_UTILS/functions
 fi
@@ -12,8 +12,8 @@ script_path=$(readlink -f $0)
 parkit_dir=$(dirname $script_path)
 uuid=$(echo $RANDOM | md5sum | head -c 20; echo;)
 tmp_dir="/dev/shm/$uuid"
-echo $tmpdir
-mkdir -p $tmpdir
+echo $tmp_dir
+mkdir -p $tmp_dir
 
 if [ "$#" != "3" ];then
 	echo "USAGE:"
@@ -42,4 +42,4 @@ echo $dme_cmd
 $dme_cmd
 
 # cleanup
-rm -rf $tmpdir
+rm -rf $tmp_dir
