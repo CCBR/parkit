@@ -1,11 +1,11 @@
 #!/usr/bin/env bash
 
-#path_to_executable=$(which dm_register_collection)
-#if [ ! -x "$path_to_executable" ] ; then
-#HPCDME toolkit setup
-#export HPC_DM_UTILS=/data/kopardevn/SandBox/HPC_DME_APIs/utils
-#source $HPC_DM_UTILS/functions
-#fi
+path_to_executable=$(which dm_register_collection)
+if [ ! -x "$path_to_executable" ] ; then
+HPCDME toolkit setup
+export HPC_DM_UTILS=/data/kopardevn/SandBox/HPC_DME_APIs/utils
+source $HPC_DM_UTILS/functions
+fi
 
 dt=$(date '+%Y%m%d')
 script_path=$(readlink -f $0)

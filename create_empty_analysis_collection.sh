@@ -12,8 +12,8 @@ script_path=$(readlink -f $0)
 parkit_dir=$(dirname $script_path)
 uuid=$(echo $RANDOM | md5sum | head -c 20; echo;)
 tmp_dir="/dev/shm/$uuid"
-echo $tmpdir
-mkdir -p $tmpdir
+echo $tmp_dir
+mkdir -p $tmp_dir
 
 if [ "$#" != "1" ];then
 	echo "USAGE:"
