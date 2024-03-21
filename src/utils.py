@@ -96,7 +96,8 @@ def run_dm_cmd(dm_cmd, errormsg=""):
     # env_vars = {
     #     'HPC_DM_UTILS': '/data/kopardevn/SandBox/HPC_DME_APIs/utils'
     # }
-    cmd = f"export HPC_DM_UTILS=/data/kopardevn/SandBox/HPC_DME_APIs/utils && source $HPC_DM_UTILS/functions && {dm_cmd}"
+    # cmd = f"export HPC_DM_UTILS=/data/kopardevn/SandBox/HPC_DME_APIs/utils && source $HPC_DM_UTILS/functions && {dm_cmd}"
+    cmd = f"source $HPC_DM_UTILS/functions && {dm_cmd}"
     print(cmd)
     proc = subprocess.run(
         cmd,
