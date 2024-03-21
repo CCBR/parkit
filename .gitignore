@@ -1,3 +1,4 @@
 **/site/*
 **.koparde*
 **/*.pyc
+**/.prettierrc
