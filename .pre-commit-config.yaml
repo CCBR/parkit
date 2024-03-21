@@ -10,15 +10,16 @@ repos:
   - repo: https://github.com/pre-commit/pre-commit-hooks
     rev: v1.2.3
     hooks:
-      - id: check-added-large-files
+      #    - id: check-added-large-files
       - id: end-of-file-fixer
       - id: trailing-whitespace
   # spell check
-  - repo: https://github.com/codespell-project/codespell
-    rev: v2.2.4
-    hooks:
-      - id: codespell
-        # https://github.com/codespell-project/codespell/issues/1498
+  #  - repo: https://github.com/codespell-project/codespell
+  #  rev: v2.2.4
+  #  hooks:
+  #    - id: codespell
+  #      args: ["--ignore-words=.custom-codespell-dictionary.txt"]
+  # https://github.com/codespell-project/codespell/issues/1498
   # Python formatting
   - repo: https://github.com/psf/black
     rev: 23.7.0

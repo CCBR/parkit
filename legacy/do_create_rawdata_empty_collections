@@ -1,0 +1,25 @@
+#!/usr/bin/env bash
+set -exo pipefail
+bash create_empty_analysis_collection.sh /CCBR_Archive/GRIDFTP/Project_CCBR-583/Rawdata
+bash create_empty_analysis_collection.sh /CCBR_Archive/GRIDFTP/Project_CCBR-642/Rawdata
+bash create_empty_analysis_collection.sh /CCBR_Archive/GRIDFTP/Project_CCBR-704/Rawdata
+bash create_empty_analysis_collection.sh /CCBR_Archive/GRIDFTP/Project_CCBR-707/Rawdata
+bash create_empty_analysis_collection.sh /CCBR_Archive/GRIDFTP/Project_CCBR-738/Rawdata
+bash create_empty_analysis_collection.sh /CCBR_Archive/GRIDFTP/Project_CCBR-751/Rawdata
+bash create_empty_analysis_collection.sh /CCBR_Archive/GRIDFTP/Project_CCBR-755/Rawdata
+bash create_empty_analysis_collection.sh /CCBR_Archive/GRIDFTP/Project_CCBR-762/Rawdata
+bash create_empty_analysis_collection.sh /CCBR_Archive/GRIDFTP/Project_CCBR-764/Rawdata
+bash create_empty_analysis_collection.sh /CCBR_Archive/GRIDFTP/Project_CCBR-777/Rawdata
+bash create_empty_analysis_collection.sh /CCBR_Archive/GRIDFTP/Project_CCBR-781/Rawdata
+bash create_empty_analysis_collection.sh /CCBR_Archive/GRIDFTP/Project_CCBR-787/Rawdata
+bash create_empty_analysis_collection.sh /CCBR_Archive/GRIDFTP/Project_CCBR-798/Rawdata
+bash create_empty_analysis_collection.sh /CCBR_Archive/GRIDFTP/Project_CCBR-805/Rawdata
+bash create_empty_analysis_collection.sh /CCBR_Archive/GRIDFTP/Project_CCBR-818/Rawdata
+bash create_empty_analysis_collection.sh /CCBR_Archive/GRIDFTP/Project_CCBR-841/Rawdata
+bash create_empty_analysis_collection.sh /CCBR_Archive/GRIDFTP/Project_CCBR-858/Rawdata
+bash create_empty_analysis_collection.sh /CCBR_Archive/GRIDFTP/Project_CCBR-868/Rawdata
+bash create_empty_analysis_collection.sh /CCBR_Archive/GRIDFTP/Project_CCBR-869/Rawdata
+bash create_empty_analysis_collection.sh /CCBR_Archive/GRIDFTP/Project_CCBR-912/Rawdata
+bash create_empty_analysis_collection.sh /CCBR_Archive/GRIDFTP/Project_CCBR-921/Rawdata
+bash create_empty_analysis_collection.sh /CCBR_Archive/GRIDFTP/Project_CCRIFX-138/Rawdata
+bash create_empty_analysis_collection.sh /CCBR_Archive/GRIDFTP/Project_CCRIFX-567/Rawdata

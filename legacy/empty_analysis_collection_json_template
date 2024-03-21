@@ -1,0 +1,21 @@
+{
+    "metadataEntries": [
+        {
+         "attribute": "collection_type",
+         "value": "Analysis"
+        },
+        {
+         "attribute": "project_start_date",
+         "value": "DATE",
+         "dateFormat": "yyyyMMdd"
+        },
+        {
+         "attribute": "method",
+         "value": "NGS"
+        },
+        {
+         "attribute": "number_of_cases",
+         "value": "unknown"
+        }
+    ]
+}
