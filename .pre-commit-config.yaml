@@ -14,11 +14,11 @@ repos:
       - id: end-of-file-fixer
       - id: trailing-whitespace
   # spell check
-  #  - repo: https://github.com/codespell-project/codespell
-  #  rev: v2.2.4
-  #  hooks:
-  #    - id: codespell
-  #      args: ["--ignore-words=.custom-codespell-dictionary.txt"]
+  - repo: https://github.com/codespell-project/codespell
+    rev: v2.2.4
+    hooks:
+      - id: codespell
+        args: ["--ignore-words=.custom-codespell-dictionary.txt"]
   # https://github.com/codespell-project/codespell/issues/1498
   # Python formatting
   - repo: https://github.com/psf/black
