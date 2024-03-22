@@ -79,7 +79,13 @@ parser.add_argument('--dest',required=False, help='vault collection path (Analys
 parser.add_argument('--projectdesc',required=False, help='project description')
 parser.add_argument('--projecttitle',required=False, help='project title')
 parser.add_argument('--cleanup',action='store_true', help='post transfer step to delete local files')
+parser.add_argument('--version',action='store_true', help='print version')
 EOF
+
+if [[ "$VERSION" == "yes" ]];then
+    ${PARKIT} --version
+    exit 0
+fi
 
 # folder is required
 required_file "$FOLDER" "--folder"
