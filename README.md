@@ -1,4 +1,4 @@
-## parkit
+## parkit 🅿️🚙
 
 **Park** an **arc**hived project tool**kit**!
 
