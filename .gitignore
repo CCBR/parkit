@@ -1,2 +1,13 @@
 **/site/*
-**.koparde*
+**/.koparde*
+**/*.pyc
+**/.prettierrc
+**/*.tmp
+**/createtar.*.err
+**/createtar.*.out
+**/deposittar.*.err
+**/deposittar.*.out
+**/createmetadata.*.out
+**/createmetadata.*.err
+**/createemptycollection.*.err
+**/createemptycollection.*.out
