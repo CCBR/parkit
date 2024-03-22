@@ -59,3 +59,5 @@ rm -rf /data/CCBR/projects/ccbr_12345
 
 # Done!
 ```
+
+`parkit_e2e` can be used to run all the above sequentially via "slurm".
