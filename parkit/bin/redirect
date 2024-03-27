@@ -1,0 +1,34 @@
+#!/usr/bin/env bash
+
+SCRIPTNAME="$BASH_SOURCE"
+SCRIPTDIRNAME=$(readlink -f $(dirname "$SCRIPTNAME"))
+
+# add "bin" to PATH
+if [[ ":$PATH:" != *":${SCRIPTDIRNAME}:"* ]];then
+	export PATH=${PATH}:${SCRIPTDIRNAME}
+fi
+
+TOOLDIR=$(dirname "$SCRIPTDIRNAME")
+TOOLNAME=$(basename "$SCRIPTNAME")
+
+# find out if you are running on biowulf or frce
+nbiowulf=$(scontrol show config 2>/dev/null | grep -i -c biowulf)
+if [[ $nbiowulf -gt 0 ]];then ISBIOWULF=true; else ISBIOWULF=false;fi
+nfrce=$(scontrol show config 2>/dev/null | grep -i -c fsitgl)
+if [[ $nfrce -gt 0 ]];then ISFRCE=true; else ISFRCE=false;fi
+if [[ $ISBIOWULF == false ]];then
+if [[ "$HOSTNAME" == "helix.nih.gov" ]];then ISBIOWULF=true; else ISBIOWULF=false;fi
+fi
+
+# check if HPC_DM_UTILS is an environmental variable and not empty
+if [ "$USER" == "kopardevn" ];then
+    export HPC_DM_UTILS=/data/kopardevn/SandBox/HPC_DME_APIs/utils
+fi
+if [ -z "${HPC_DM_UTILS}" ]; then
+    echo "HPC_DM_UTILS is unset!"
+    echo "try:"
+    echo "export HPC_DM_UTILS=/path/to/HPC_DME_APIs/utils && ${SCRIPTDIRNAME}/${TOOLNAME} $@"
+    exit 1
+fi
+
+${TOOLDIR}/${TOOLNAME} "$@" || exit 1
