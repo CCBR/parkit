@@ -1,7 +1,5 @@
 from src.utils import *
 from pathlib import Path
-import subprocess
-import shlex
 
 
 def createtar(folder, outfile):
@@ -48,4 +46,28 @@ def createtar(folder, outfile):
     created_files.append(f"{outfile}.filelist")
     created_files.append(f"{outfile}.md5")
     created_files.append(f"{outfile}.filelist.md5")
+    return created_files
+
+
+def tarprep(tarfile):
+    created_files = list()
+    p = Path(tarfile)
+    if p.suffix == ".gz":
+        cmd = f"tar tzvf {tarfile} > {tarfile}.filelist"
+    elif p.suffix == ".tar":
+        cmd = f"tar tvf {tarfile} > {tarfile}.filelist"
+    else:
+        errorout('tarfile extension should be ".gz" or ".tar"')
+    run_cmd(cmd=cmd, errormsg="getting filelist from tar file failed!")
+
+    # calculate md5sum and write out to ".md5" files
+    for f in [f"{tarfile}.filelist", tarfile]:
+        md5sum = get_md5sum(f)
+        md5sumfile = f + ".md5"
+        with open(md5sumfile, "w") as of:
+            of.write(f"{md5sum}\n")
+
+    created_files.append(f"{tarfile}.filelist")
+    created_files.append(f"{tarfile}.md5")
+    created_files.append(f"{tarfile}.filelist.md5")
     return created_files
