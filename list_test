@@ -1,1 +1,0 @@
-python list_hpcdme_files.py -p /CCBR_Archive/GRIDFTP -o all_fastqs.txt -f fastq -t /data/kopardevn/HPCDMELOG/tmp/
