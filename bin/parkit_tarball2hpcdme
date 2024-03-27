@@ -4,7 +4,7 @@
 
 JID=""
 
-required_file(){
+required_argument(){
 f=$1
 argument=$2
 if [ -z "$f" ]; then
@@ -69,12 +69,12 @@ PARKIT="${TOOLDIR}/${TOOLNAME}"
 # Test if parkit is working
 ${PARKIT} > /dev/null 2>&1 || { echo "${PARKIT} not found or cannot be run!"; exit 1; }
 
-ARGPARSE_DESCRIPTION="End-to-end parkit"
+ARGPARSE_DESCRIPTION="End-to-end parkit: Tarball 2 HPCDME"
 source ${RESOURCEDIR}/resources/argparse.bash || exit 1
 argparse "$@" <<EOF || exit 1
 parser.add_argument('--restartfrom',required=False, help='if restarting then restart from this step. Options are: createemptycollection, createmetadata, deposittar')
 parser.add_argument('--executor',required=False,default='local', help='slurm or local')
-parser.add_argument('--folder',required=False, help='project folder to archive')
+parser.add_argument('--tarball',required=False, help='project tarball to archive')
 parser.add_argument('--dest',required=False, help='vault collection path (Analysis goes under here!)')
 parser.add_argument('--projectdesc',required=False, help='project description')
 parser.add_argument('--projecttitle',required=False, help='project title')
@@ -88,9 +88,11 @@ if [[ "$VERSION" == "yes" ]];then
 fi
 
 # folder is required
-required_file "$FOLDER" "--folder"
-TARBALL="${FOLDER}.tar"
-
+required_argument "$TARBALL" "--tarball"
+if [ ! -f "${TARBALL}" ];then
+    echo "${TARBALL} does not exist!"
+    exit 1
+fi
 # cleanup option
 if [[ "${CLEANUP}" == "yes" ]];then
     for f in "${TARBALL}"* *response-header.tmp *response-message.json.tmp
@@ -116,34 +118,32 @@ else
 fi
 
 # dest is required
-required_file "$DEST" "--dest"
+required_argument "$DEST" "--dest"
 
 # figure out what needs to run
-RUN_createtar=0
+RUN_tarprep=0
 RUN_createemptycollection=0
 RUN_createmetadata=0
 RUN_deposittar=0
 if [ -z "$RESTARTFROM" ];then
-    RUN_createtar=1
+    RUN_tarprep=1
     RUN_createemptycollection=1
     RUN_createmetadata=1
     RUN_deposittar=1
-    required_file "$PROJECTDESC" "--projectdesc"
-    required_file "$PROJECTTITLE" "--projecttitle"
 elif [ "$RESTARTFROM" == "createemptycollection" ];then
-    RUN_createtar=0
+    RUN_tarprep=0
     RUN_createemptycollection=1
     RUN_createmetadata=1
     RUN_deposittar=1
-    required_file "$PROJECTDESC" "--projectdesc"
-    required_file "$PROJECTTITLE" "--projecttitle"
+    required_argument "$PROJECTDESC" "--projectdesc"
+    required_argument "$PROJECTTITLE" "--projecttitle"
 elif [ "$RESTARTFROM" == "createmetadata" ];then
-    RUN_createtar=0
+    RUN_tarprep=0
     RUN_createemptycollection=0
     RUN_createmetadata=1
     RUN_deposittar=1
 elif [ "$RESTARTFROM" == "deposittar" ];then
-    RUN_createtar=0
+    RUN_tarprep=0
     RUN_createemptycollection=0
     RUN_createmetadata=0
     RUN_deposittar=1
@@ -156,15 +156,15 @@ fi
 jobids=""
 dependency=""
 
-# $RUN_createtar
-if [[ "$RUN_createtar" == "1" ]]; then
-echo "################ Running createtar #############################"
-    cmd="${PARKIT} createtar --folder \"${FOLDER}\""
+# $RUN_tarprep
+if [[ "$RUN_tarprep" == "1" ]]; then
+echo "################ Running tarprep #############################"
+    cmd="${PARKIT} tarprep --tarball \"${TARBALL}\""
     echo $cmd
     if [[ "$EXECUTOR" == "local" ]];then
         `$cmd`
     else
-        run_sbatch_cmd "$cmd" "$dependency" "createtar"
+        run_sbatch_cmd "$cmd" "$dependency" "tarprep"
         jid="$JID"
         if [[ "$jid" == "" ]];then exit 1;fi    # stop if job is NOT submitted.
         if [[ "$jobids" == "" ]];then
@@ -174,7 +174,7 @@ echo "################ Running createtar #############################"
         fi
     fi
 echo "################################################################"
-fi # $RUN_createtar ends
+fi # $RUN_tarprep ends
 
 # RUN_createemptycollection
 if [[ "$RUN_createemptycollection" == "1" ]];then

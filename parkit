@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
 import argparse
-from src.createtar import createtar
+from src.createtar import createtar, tarprep
 from src.createmetadata import createmetadata
 from src.createemptycollection import createemptycollection
 from src.deposittar import deposittocollection
@@ -26,6 +26,14 @@ def main():
     )
     parser_createtar.add_argument(
         "--outfile", type=str, help="path to output tarball", required=False, default=""
+    )
+
+    # Create a subcommand for "tarprep"
+    parser_tarprep = subparsers.add_parser(
+        "tarprep", help="prepare tarball for upload."
+    )
+    parser_tarprep.add_argument(
+        "--tarball", type=str, help="path to tar file", required=True
     )
 
     # Create a subcommand for "createmetadata"
@@ -81,12 +89,13 @@ def main():
         parser.print_help()
     elif args.command == "createtar":
         files_created = createtar(args.folder, args.outfile)
+    elif args.command == "tarprep":
+        files_created = tarprep(args.tarball)
     elif args.command == "createemptycollection":
         createemptycollection(
             args.dest, projectdesc=args.projectdesc, projecttitle=args.projecttitle
         )
     elif args.command == "createmetadata":
-        files_created = []
         tar_json_path = createmetadata(args.tarball, args.dest)
         files_created.append(tar_json_path)
         filelist_json_path = createmetadata(args.tarball + ".filelist", args.dest)

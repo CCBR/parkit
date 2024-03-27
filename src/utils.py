@@ -46,7 +46,7 @@ def create_random_path(tmpdir, extension):
         return tmpdir + os.sep + str(uuid.uuid4()) + extension
 
 
-def run_cmd(cmd, errormsg=""):
+def run_cmd(cmd, errormsg="", returnproc=False, exitiffails=True):
     """
     run the cmd with subprocess and check for errors
     """
@@ -63,7 +63,10 @@ def run_cmd(cmd, errormsg=""):
         print("stderr:" + se)
         # se_test = "Error Code: 503" in se
         # print("503:"+str(se_test))
-        exit(errormsg)
+        if exitiffails:
+            exit(errormsg)
+    if returnproc:
+        return proc
 
 
 def delete_listoffiles(files2delete):
@@ -92,7 +95,7 @@ def get_md5sum(file_path):
         return file_hash.hexdigest()
 
 
-def run_dm_cmd(dm_cmd, errormsg=""):
+def run_dm_cmd(dm_cmd, errormsg="", returnproc=False, exitiffails=True):
     # env_vars = {
     #     'HPC_DM_UTILS': '/data/kopardevn/SandBox/HPC_DME_APIs/utils'
     # }
@@ -117,4 +120,7 @@ def run_dm_cmd(dm_cmd, errormsg=""):
         print("stderr:" + se)
         # se_test = "Error Code: 503" in se
         # print("503:"+str(se_test))
-        exit(errormsg)
+        if exitiffails:
+            exit(errormsg)
+    if returnproc:
+        return proc
