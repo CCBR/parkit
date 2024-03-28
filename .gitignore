@@ -1,5 +1,6 @@
 **/site/*
 **/dist/*
+**/*.egg_info/*
 **/.koparde*
 **/*.pyc
 **/.prettierrc
