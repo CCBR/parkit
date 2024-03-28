@@ -1,0 +1,16 @@
+{
+  "page": 1,
+  "pageSize": 10,
+  "totalCount": true,
+  "detailedResponse": false,
+  "compoundQuery": {
+    "operator": "AND",
+    "queries": [
+      {
+        "attribute": "file_type",
+        "operator": "EQUAL",
+        "value": "FILELIST"
+      }
+    ]
+  }
+}
