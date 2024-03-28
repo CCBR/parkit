@@ -46,11 +46,12 @@ def create_random_path(tmpdir, extension):
         return tmpdir + os.sep + str(uuid.uuid4()) + extension
 
 
-def run_cmd(cmd, errormsg="", returnproc=False, exitiffails=True):
+def run_cmd(cmd, errormsg="", returnproc=False, exitiffails=True, echocmd=True):
     """
     run the cmd with subprocess and check for errors
     """
-    print(cmd)
+    if echocmd:
+        print(cmd)
     proc = subprocess.run(cmd, shell=True, capture_output=True, text=True)
     exitcode = str(proc.returncode)
     if exitcode != "0":
@@ -124,3 +125,12 @@ def run_dm_cmd(dm_cmd, errormsg="", returnproc=False, exitiffails=True):
             exit(errormsg)
     if returnproc:
         return proc
+
+
+def which(program):
+    """Mimics the Unix 'which' command to find the path of an executable."""
+    for path in os.environ["PATH"].split(os.pathsep):
+        executable = os.path.join(path, program)
+        if os.path.exists(executable) and os.access(executable, os.X_OK):
+            return executable
+    return None

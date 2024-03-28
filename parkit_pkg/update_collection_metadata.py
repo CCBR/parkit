@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 import argparse
 import pandas as pd
 import sys
@@ -5,8 +6,8 @@ import os
 import json
 from uuid import uuid4
 
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
-from src.utils import *
+# sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
+from parkit_pkg.src.utils import *
 
 
 def in_att_list(att_list, att):

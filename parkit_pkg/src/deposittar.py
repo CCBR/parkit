@@ -1,5 +1,5 @@
 from pathlib import Path
-from src.utils import *
+from parkit_pkg.src.utils import *
 
 
 def deposittocollection(tar, collectionpath):

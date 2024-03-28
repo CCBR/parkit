@@ -1,7 +1,7 @@
 from pathlib import Path
 import json
 from uuid import uuid4
-from src.utils import *
+from parkit_pkg.src.utils import *
 
 
 def createmetadata(infile, collectionpath):

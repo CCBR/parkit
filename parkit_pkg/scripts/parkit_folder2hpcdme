@@ -17,15 +17,20 @@ run_sbatch_cmd(){
 cmd="$1"
 dependency="$2"
 jobname="$3"
+hpcdmutilspath="$4"
 # Write the script to a temporary file
 temp_script=$(mktemp)
 cat << EOF > "$temp_script"
 #!/bin/bash
+${SOURCE_CONDA_CMD}
+conda activate parkit
+export HPC_DM_UTILS=${hpcdmutilspath}
+echo \$HPC_DM_UTILS
 $cmd
 EOF
 # Make the temporary script executable
 chmod +x "$temp_script"
-
+cat $temp_script
 # Submit the script to sbatch
 sbatchcmd=$(
 cat << EOF
@@ -64,7 +69,13 @@ fi
 RESOURCEDIR=$(dirname "$SCRIPTDIRNAME")
 TOOLDIR="$SCRIPTDIRNAME"
 TOOLNAME="parkit"
-PARKIT="${TOOLDIR}/${TOOLNAME}"
+# PARKIT="${TOOLDIR}/${TOOLNAME}"
+PARKIT="parkit"
+if [ -z "${SOURCE_CONDA_CMD}" ];then
+    echo "SOURCE_CONDA_CMD env variable must be set"
+    exit 1
+fi
+
 
 # Test if parkit is working
 ${PARKIT} > /dev/null 2>&1 || { echo "${PARKIT} not found or cannot be run!"; exit 1; }
@@ -79,6 +90,7 @@ parser.add_argument('--dest',required=False, help='vault collection path (Analys
 parser.add_argument('--projectdesc',required=False, help='project description')
 parser.add_argument('--projecttitle',required=False, help='project title')
 parser.add_argument('--cleanup',action='store_true', help='post transfer step to delete local files')
+parser.add_argument('--hpcdmutilspath', required=True, help='what should be the value of env var HPC_DM_UTILS')
 parser.add_argument('--version',action='store_true', help='print version')
 EOF
 
@@ -164,13 +176,13 @@ echo "################ Running createtar #############################"
     if [[ "$EXECUTOR" == "local" ]];then
         `$cmd`
     else
-        run_sbatch_cmd "$cmd" "$dependency" "createtar"
+        run_sbatch_cmd "$cmd" "$dependency" "createtar" "$HPCDMUTILSPATH"
         jid="$JID"
         if [[ "$jid" == "" ]];then exit 1;fi    # stop if job is NOT submitted.
         if [[ "$jobids" == "" ]];then
             jobids="$jid"
         else
-            jobids="$jobids,$jid"
+            jobids="$jobids:$jid"
         fi
     fi
 echo "################################################################"
@@ -188,13 +200,13 @@ echo "############ Running createemptycollection ######################"
         if [[ "$jobids" != "" ]];then
             dependency="--dependency=afterok:${jobids}"
         fi
-        run_sbatch_cmd "$cmd" "$dependency" "createemptycollection"
+        run_sbatch_cmd "$cmd" "$dependency" "createemptycollection" "$HPCDMUTILSPATH"
         jid="$JID"
         if [[ "$jid" == "" ]];then exit 1;fi    # stop if job is NOT submitted.
         if [[ "$jobids" == "" ]];then
             jobids="$jid"
         else
-            jobids="$jobids,$jid"
+            jobids="$jobids:$jid"
         fi
     fi
 echo "################################################################"
@@ -212,13 +224,13 @@ echo "########### Running createmetadata ##############################"
         if [[ "$jobids" != "" ]];then
             dependency="--dependency=afterok:${jobids}"
         fi
-        run_sbatch_cmd "$cmd" "$dependency" "createmetadata"
+        run_sbatch_cmd "$cmd" "$dependency" "createmetadata" "$HPCDMUTILSPATH"
         jid="$JID"
         if [[ "$jid" == "" ]];then exit 1;fi    # stop if job is NOT submitted.
         if [[ "$jobids" == "" ]];then
             jobids="$jid"
         else
-            jobids="$jobids,$jid"
+            jobids="$jobids:$jid"
         fi
     fi
 echo "################################################################"
@@ -236,13 +248,13 @@ echo "############# Running deposittar ###############################"
         if [[ "$jobids" != "" ]];then
             dependency="--dependency=afterok:${jobids}"
         fi
-        run_sbatch_cmd "$cmd" "$dependency" "deposittar"
+        run_sbatch_cmd "$cmd" "$dependency" "deposittar" "$HPCDMUTILSPATH"
         jid="$JID"
         if [[ "$jid" == "" ]];then exit 1;fi    # stop if job is NOT submitted.
         if [[ "$jobids" == "" ]];then
             jobids="$jid"
         else
-            jobids="$jobids,$jid"
+            jobids="$jobids:$jid"
         fi
     fi
 echo "################################################################"
