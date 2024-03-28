@@ -19,7 +19,7 @@ repos:
     hooks:
       - id: codespell
         args: ["--ignore-words=.custom-codespell-dictionary.txt"]
-        exclude: scripts/user-projects.csv
+        exclude: parkit_pkg/resources/user-projects.csv
   # https://github.com/codespell-project/codespell/issues/1498
   # Python formatting
   - repo: https://github.com/psf/black
