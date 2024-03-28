@@ -1,1 +1,1 @@
-parkit/README.md
+parkit_pkg/README.md
