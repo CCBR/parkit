@@ -1,6 +1,7 @@
 **/site/*
 **/dist/*
 **/*.egg_info/*
+**/parkit_pkg.egg-info/*
 **/.koparde*
 **/*.pyc
 **/.prettierrc
