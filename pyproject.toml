@@ -6,12 +6,8 @@
 requires = ["setuptools>=61.0", "wheel", "setuptools-scm"]
 build-backend = "setuptools.build_meta"
 
-# flat-layout fix .. because you have other directory than "parkit" in your main project folder
-[tool.setuptools]
-py-modules = ["parkit_pkg"]
-
 [project]
-name = "parkit_pkg"
+name = "parkit"
 version = "2.0.0"
 description = "Parkit"
 authors = [
@@ -34,7 +30,7 @@ dependencies = ["pandas"]
 # Issues = "https://github.com/pypa/sampleproject/issues"
 
 [project.scripts]
-parkit = "parkit_pkg.__main__:main"
-parkit_folder2hpcdme = "parkit_pkg.parkit_folder2hpcdme:main"
-parkit_tarball2hpcdme = "parkit_pkg.parkit_tarball2hpcdme:main"
-update_collection_metadata = "parkit_pkg.update_collection_metadata:main"
+parkit = "parkit.__main__:main"
+parkit_folder2hpcdme = "parkit.parkit_folder2hpcdme:main"
+parkit_tarball2hpcdme = "parkit.parkit_tarball2hpcdme:main"
+update_collection_metadata = "parkit.update_collection_metadata:main"
