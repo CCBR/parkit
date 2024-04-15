@@ -8,17 +8,15 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "parkit"
-version = "2.0.0"
+dynamic = ['version','readme']
 description = "Parkit"
 authors = [
     { name="kopardev", email="vishal.koparde@nih.gov" },
 ]
 license = {file = "LICENSE.md"}
-readme = "README.md"
 requires-python = ">=3.11"
 # keywords = []
 dependencies = ["pandas"]
-
 # classifiers = [
 #     "Programming Language :: Python :: 3",
 #     "License :: OSI Approved :: MIT License",
@@ -34,3 +32,7 @@ parkit = "parkit.__main__:main"
 parkit_folder2hpcdme = "parkit.parkit_folder2hpcdme:main"
 parkit_tarball2hpcdme = "parkit.parkit_tarball2hpcdme:main"
 update_collection_metadata = "parkit.update_collection_metadata:main"
+
+[tool.setuptools.dynamic]
+version = {file = "src/parkit/src/VERSION"}
+readme = {file = "README.md"}
