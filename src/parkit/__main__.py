@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
 
 import argparse
-from parkit_pkg.src.createtar import createtar, tarprep
-from parkit_pkg.src.createmetadata import createmetadata
-from parkit_pkg.src.createemptycollection import createemptycollection
-from parkit_pkg.src.deposittar import deposittocollection
-from parkit_pkg.src.VersionCheck import __version__
+from parkit.src.createtar import createtar, tarprep
+from parkit.src.createmetadata import createmetadata
+from parkit.src.createemptycollection import createemptycollection
+from parkit.src.deposittar import deposittocollection
+from parkit.src.VersionCheck import __version__
 
 
 def main():

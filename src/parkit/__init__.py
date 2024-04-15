@@ -1,5 +1,5 @@
 import os
-from parkit_pkg.src.utils import *
+from parkit.src.utils import *
 
 hpc = ""
 if which("scontrol") != None:

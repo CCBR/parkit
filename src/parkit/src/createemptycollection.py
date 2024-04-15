@@ -2,7 +2,7 @@ import json
 import os
 from uuid import uuid4
 from datetime import datetime
-from parkit_pkg.src.utils import *
+from parkit.src.utils import *
 
 
 def createemptycollection(collectionpath, projectdesc="", projecttitle=""):
