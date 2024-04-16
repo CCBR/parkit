@@ -16,11 +16,11 @@
 %> conda activate parkit
 ```
 
-If not on helix or biowulf then you will have to **clone** the repo and **pip install** it.
-
 - [HPC_DME_APIs](https://github.com/CBIIT/HPC_DME_APIs) package needs to be cloned and set up correctly. Run `dm_generate_token` to successfully generate a token prior to running `parkit`.
 
 - **HPC_DM_UTILS** environmental variable should be preset before calling `parkit`. It also needs to be passed as an argument to `parkit_folder2hpcdme` and `parkit_tarball2hpcdme` end-to-end workflows.
+
+>  If not on helix or biowulf then you will have to **clone** the repo and **pip install** it. Then setup [HPC_DME_APIs](https://github.com/CBIIT/HPC_DME_APIs) appropriately.
 
 ### Usage:
 
