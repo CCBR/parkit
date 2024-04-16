@@ -1,7 +1,8 @@
+build/
 **/site/*
 **/dist/*
 **/*.egg_info/*
-**/parkit_pkg.egg-info/*
+**/parkit.egg-info/*
 **/.koparde*
 **/*.pyc
 **/.prettierrc
