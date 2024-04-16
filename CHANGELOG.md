@@ -1,4 +1,11 @@
-## v2.0
+## v2.0.1
+
+## Features/BugFixes
+
+- package renamed from `parkit_pkg` to `parkit`
+- reorganized package by recreating `src` folder
+
+## v2.0.0
 
 ### Features/BugFixes
 
