@@ -16,12 +16,21 @@ authors = [
 license = {file = "LICENSE.md"}
 requires-python = ">=3.11"
 # keywords = []
-dependencies = ["pandas"]
 # classifiers = [
 #     "Programming Language :: Python :: 3",
 #     "License :: OSI Approved :: MIT License",
 #     "Operating System :: OS Independent",
 # ]
+dependencies = ["pandas"]
+
+[project.optional-dependencies]
+dev = [
+    "black >= 22.0.0",
+    "pre-commit"
+]
+test = [
+    "pytest"
+]
 
 # [project.urls]
 # Homepage = "https://github.com/pypa/sampleproject"
