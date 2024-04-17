@@ -2,6 +2,9 @@
 
 **Park** an **arc**hived project tool**kit**!
 
+[![test](https://github.com/CCBR/parkit/actions/workflows/test.yml/badge.svg)](https://github.com/CCBR/parkit/actions/workflows/test.yml)
+[![docs](https://github.com/CCBR/parkit/actions/workflows/docs.yml/badge.svg)](https://github.com/CCBR/parkit/actions/workflows/docs.yml)
+
 > DISCLAIMERS:
 >
 > - works only on [BIOWULF](https://hpc.nih.gov/) or HELIX
