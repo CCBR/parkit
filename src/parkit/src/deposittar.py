@@ -2,11 +2,11 @@ from pathlib import Path
 from parkit.src.utils import *
 
 
-def deposittocollection(tar, collectionpath):
+def deposittocollection(tar, collectionpath, collectiontype): # collectiontype="Rawdata" for rawdata or "Analysis" for analysis
     p = Path(tar)
     p = p.absolute()
 
-    analysis_collectionpath = collectionpath + "/Analysis"
+    analysis_collectionpath = collectionpath + "/" + collectiontype
     tar_collectionpath = analysis_collectionpath + "/" + p.name
     tarfilelist_collectionpath = analysis_collectionpath + "/" + p.name + ".filelist"
     tarmetadata = str(p) + ".metadata.json"

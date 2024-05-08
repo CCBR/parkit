@@ -63,6 +63,8 @@ def createemptycollection(collectionpath, projectdesc="", projecttitle=""):
         ]
     }
 
+
+
     emptyanalysis_str = json.dumps(emptyanalysis)
     emptyanalysis_str = emptyanalysis_str.replace("DATE", formatted_date)
     new_emptyanalysis = json.loads(emptyanalysis_str)
@@ -71,6 +73,37 @@ def createemptycollection(collectionpath, projectdesc="", projecttitle=""):
         json.dump(new_emptyanalysis, outf, indent=4)
 
     analysis_collectionpath = collectionpath + "/Analysis"
+
+    cmd = f"dm_register_collection {json_path} {analysis_collectionpath}"
+    run_dm_cmd(
+        dm_cmd=cmd,
+        errormsg=f"dm_register_collection failed for {analysis_collectionpath}",
+    )
+
+    # cmd = f"cat {json_path} && rm -f {json_path}"
+    # run_cmd(cmd=cmd)
+
+    # emptyrawdata = {
+    #     "metadataEntries": [
+    #         {"attribute": "collection_type", "value": "Project"},
+    #         {
+    #             "attribute": "project_start_date",
+    #             "value": "DATE",
+    #             "dateFormat": "yyyyMMdd",
+    #         },
+    #         {"attribute": "method", "value": "NGS"},
+    #         {"attribute": "number_of_cases", "value": "unknown"},
+    #     ]
+    # }
+
+    # emptyrawdata_str = json.dumps(emptyrawdata)
+    # emptyrawdata_str = emptyrawdata_str.replace("DATE", formatted_date)
+    # new_emptyrawdata = json.loads(emptyrawdata_str)
+    # json_path = os.path.join("/dev/shm", str(uuid4()) + ".json")
+    # with open(json_path, "w") as outf:
+    #     json.dump(new_emptyrawdata, outf, indent=4)
+
+    analysis_collectionpath = collectionpath + "/Rawdata"
 
     cmd = f"dm_register_collection {json_path} {analysis_collectionpath}"
     run_dm_cmd(

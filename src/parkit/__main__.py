@@ -79,6 +79,12 @@ def main():
         help="destination path in vault (Analysis collection goes under here)",
         required=True,
     )
+    parser_deposittar.add_argument(
+        "--collectiontype", 
+        type=str, 
+        help="path to tarball", 
+        default="Analysis" # or Rawdata
+    )
 
     # Parse the arguments
     args = parser.parse_args()
@@ -101,7 +107,7 @@ def main():
         filelist_json_path = createmetadata(args.tarball + ".filelist", args.dest)
         files_created.append(filelist_json_path)
     elif args.command == "deposittar":
-        deposittocollection(args.tarball, args.dest)
+        deposittocollection(args.tarball, args.dest, args.collectiontype)
     for f in files_created:
         print(f"createmetadata: {f} file was created!")
 

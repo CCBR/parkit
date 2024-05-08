@@ -23,9 +23,10 @@ temp_script=$(mktemp)
 cat << EOF > "$temp_script"
 #!/bin/bash
 ${SOURCE_CONDA_CMD}
-conda activate parkit
+conda activate parkit_dev
 export HPC_DM_UTILS=${hpcdmutilspath}
 echo \$HPC_DM_UTILS
+which parkit
 $cmd
 EOF
 # Make the temporary script executable
@@ -89,6 +90,7 @@ parser.add_argument('--folder',required=False, help='project folder to archive')
 parser.add_argument('--dest',required=False, help='vault collection path (Analysis goes under here!)')
 parser.add_argument('--projectdesc',required=False, help='project description')
 parser.add_argument('--projecttitle',required=False, help='project title')
+parser.add_argument('--rawdata',action='store_true', help='If tarball is rawdata and needs to go under folder Rawdata')
 parser.add_argument('--cleanup',action='store_true', help='post transfer step to delete local files')
 parser.add_argument('--hpcdmutilspath', required=True, help='what should be the value of env var HPC_DM_UTILS')
 parser.add_argument('--version',action='store_true', help='print version')
@@ -240,6 +242,9 @@ fi # RUN_createmetadata ends
 if [[ "$RUN_deposittar" == "1" ]];then
 echo "############# Running deposittar ###############################"
     cmd="${PARKIT} deposittar --tarball \"${TARBALL}\" --dest \"${DEST}\""
+    if [[ "${RAWDATA}" == "yes" ]];then
+        cmd="${cmd} --collectiontype \"Rawdata\""
+    fi
     echo $cmd
     if [[ "$EXECUTOR" == "local" ]];then
         `$cmd`
