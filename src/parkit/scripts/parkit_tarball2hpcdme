@@ -85,6 +85,7 @@ parser.add_argument('--dest',required=False, help='vault collection path (Analys
 parser.add_argument('--projectdesc',required=False, help='project description')
 parser.add_argument('--projecttitle',required=False, help='project title')
 parser.add_argument('--cleanup',action='store_true', help='post transfer step to delete local files')
+parser.add_argument('--makereadme',action='store_true', help='make readme file with destination location on vault')
 parser.add_argument('--hpcdmutilspath', required=True, help='what should be the value of env var HPC_DM_UTILS')
 parser.add_argument('--version',action='store_true', help='print version')
 EOF
@@ -100,11 +101,14 @@ if [ ! -f "${TARBALL}" ];then
     echo "${TARBALL} does not exist!"
     exit 1
 fi
+README="${TARBALL}.README"
 # cleanup option
 if [[ "${CLEANUP}" == "yes" ]];then
     for f in "${TARBALL}"* *response-header.tmp *response-message.json.tmp
     do
-        rm -iv $f
+        if [[ "${TARBALL}.filelist" != "${f}" ]];then
+          rm -iv $f
+        fi
     done
     exit 0
 fi
@@ -251,6 +255,9 @@ echo "############# Running deposittar ###############################"
         else
             jobids="$jobids:$jid"
         fi
+    fi
+    if [[ "${MAKEREADME}" == "yes" ]];then
+      echo "${TARBALL} parked at ${DEST} on HPCDME!" >> "${README}"
     fi
 echo "################################################################"
 fi # RUN_deposittar ends

@@ -111,7 +111,7 @@ README="${FOLDER}.README"
 if [[ "${CLEANUP}" == "yes" ]];then
     for f in "${TARBALL}"* *response-header.tmp *response-message.json.tmp
     do
-	if [ "$f" != "${TARBALL}.filelist" ];then
+	if [[ "$f" != "${TARBALL}.filelist" ]];then
           rm -iv $f
         fi
     done
