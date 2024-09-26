@@ -55,21 +55,26 @@ options:
 
 ### Example:
 
-- Say you want to archive `/data/CCBR/projects/CCBR-12345` folder to `/CCBR_Archive/GRIDFTP/CCBR-12345` collection on HPC-DME
+- Say you want to archive `/data/CCBR/projects/CCBR-12345` folder to `/CCBR_Archive/GRIDFTP/Project_CCBR-12345` collection on HPC-DME
 - you can run the following commands sequentially to do this:
 
 ```bash
 # create the tarball
 %> parkit createtar --folder /data/CCBR/projects/ccbr_12345
+# the above command will creates the following files:
+# - ccbr_12345.tar
+# - ccbr_12345.tar.md5
+# - ccbr_12345.tar.filelist
+# - ccbr_12345.tar.filelist.md5
 
 # create an empty collection on HPC-DME
-%> parkit createemptycollection --dest /CCBR_Archive/GRIDFTP/CCBR-12345 --projectdesc "testing" --projecttitle "test project 1"
+%> parkit createemptycollection --dest /CCBR_Archive/GRIDFTP/Project_CCBR-12345 --projectdesc "testing" --projecttitle "test project 1"
 
 # create required metadata
-%> parkit createmetadata --tarball /data/CCBR/projects/ccbr_12345.tar --dest /CCBR_Archive/GRIDFTP/CCBR-12345
+%> parkit createmetadata --tarball /data/CCBR/projects/ccbr_12345.tar --dest /CCBR_Archive/GRIDFTP/Project_CCBR-12345
 
 # deposit the tar into HPC-DME
-%> parkit deposittar --tarball /data/CCBR/projects/ccbr_12345.tar --dest /CCBR_Archive/GRIDFTP/CCBR-12345
+%> parkit deposittar --tarball /data/CCBR/projects/ccbr_12345.tar --dest /CCBR_Archive/GRIDFTP/Project_CCBR-12345
 
 # bunch of extra files are created in the process
 %> ls /data/CCBR/projects/ccbr_12345.tar*
@@ -83,7 +88,7 @@ options:
 %> rm -rf /data/CCBR/projects/ccbr_12345
 
 # test results with
-%> dm_get_collection /CCBR_Archive/GRIDFTP/CCBR-12345
+%> dm_get_collection /CCBR_Archive/GRIDFTP/Project_CCBR-12345
 # Done!
 ```
 
