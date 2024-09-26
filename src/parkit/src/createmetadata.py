@@ -4,11 +4,11 @@ from uuid import uuid4
 from parkit.src.utils import *
 
 
-def createmetadata(infile, collectionpath):
-    analysis_collectionpath = collectionpath + "/Analysis"
+def createmetadata(infile, collectionpath, collectiontype): # collectiontype="Rawdata" for rawdata or "Analysis" for analysis
     p = Path(infile)
     p = p.absolute()
 
+    analysis_collectionpath = collectionpath + "/" + collectiontype
     filename = p.name
     vaultpath = analysis_collectionpath + "/" + filename
 

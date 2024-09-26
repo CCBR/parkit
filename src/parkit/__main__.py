@@ -48,6 +48,12 @@ def main():
         help="destination path in vault (Analysis collection goes under here)",
         required=True,
     )
+    parser_createmetadata.add_argument(
+        "--collectiontype", 
+        type=str, 
+        help="type of collection ... Analysis[default] or Rawdata", 
+        default="Analysis" # or Rawdata
+    )
 
     # Create a subcommand for "createemptycollection"
     parser_createemptycollection = subparsers.add_parser(
@@ -82,7 +88,7 @@ def main():
     parser_deposittar.add_argument(
         "--collectiontype", 
         type=str, 
-        help="path to tarball", 
+        help="type of collection ... Analysis[default] or Rawdata", 
         default="Analysis" # or Rawdata
     )
 
