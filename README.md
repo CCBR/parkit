@@ -69,23 +69,32 @@ options:
 
 # create an empty collection on HPC-DME
 %> parkit createemptycollection --dest /CCBR_Archive/GRIDFTP/Project_CCBR-12345 --projectdesc "testing" --projecttitle "test project 1"
+# the above command creates collections:
+# - /CCBR_Archive/GRIDFTP/Project_CCBR-12345
+# - /CCBR_Archive/GRIDFTP/Project_CCBR-12345/Analysis
+# - /CCBR_Archive/GRIDFTP/Project_CCBR-12345/Rawdata
 
 # create required metadata
 %> parkit createmetadata --tarball /data/CCBR/projects/ccbr_12345.tar --dest /CCBR_Archive/GRIDFTP/Project_CCBR-12345
+# if ccbr_12345.tar is rawdata then "--collectiontype Rawdata" argument needs to be added to the above commandline
 
 # deposit the tar into HPC-DME
 %> parkit deposittar --tarball /data/CCBR/projects/ccbr_12345.tar --dest /CCBR_Archive/GRIDFTP/Project_CCBR-12345
+# if ccbr_12345.tar is rawdata then "--collectiontype Rawdata" argument needs to be added to the above commandline
 
 # bunch of extra files are created in the process
 %> ls /data/CCBR/projects/ccbr_12345.tar*
 /data/CCBR/projects/ccbr_12345.tar           /data/CCBR/projects/ccbr_12345.tar.filelist.md5            /data/CCBR/projects/ccbr_12345.tar.md5
 /data/CCBR/projects/ccbr_12345.tar.filelist  /data/CCBR/projects/ccbr_12345.tar.filelist.metadata.json  /data/CCBR/projects/ccbr_12345.tar.metadata.json
 
-# these extra files can now be deleted
-%> rm -f /data/CCBR/projects/ccbr_12345.tar*
+# delete the recently parked project folder contents including hidden contents
+%> rm -rf /data/CCBR/projects/CCBR-12345/*
 
-# you can also deleted the recently parked project folder
-%> rm -rf /data/CCBR/projects/ccbr_12345
+# copy filelist into the empty project folder for future quick reference
+%> cp /data/CCBR/projects/ccbr_12345.tar.filelist /data/CCBR/projects/CCBR-12345/ccbr_12345.tar.filelist
+
+# delete files created by parkit
+%> rm -f /data/CCBR/projects/ccbr_12345.tar*
 
 # test results with
 %> dm_get_collection /CCBR_Archive/GRIDFTP/Project_CCBR-12345
