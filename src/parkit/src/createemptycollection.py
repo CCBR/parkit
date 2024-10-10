@@ -52,7 +52,7 @@ def createemptycollection(collectionpath, projectdesc="", projecttitle=""):
 
     emptyanalysis = {
         "metadataEntries": [
-            {"attribute": "collection_type", "value": "Folder"},
+            {"attribute": "collection_type", "value": "Analysis"},
             {
                 "attribute": "project_start_date",
                 "value": "DATE",
