@@ -108,6 +108,8 @@ We also have end-to-end slurm-supported folder-to-hpcdme and tarball-to-hpcdme w
 
 If run with `--executor slurm` this interfaces with the job scheduler on Biowulf and submitted individual steps of these E2E workflows as interdependent jobs.
 
+### `parkit_folder2hpcdme`
+
 ```bash
 %> parkit_folder2hpcdme --help
 usage: parkit_folder2hpcdme [-h] [--restartfrom RESTARTFROM] [--executor EXECUTOR] [--folder FOLDER] [--dest DEST] [--projectdesc PROJECTDESC]
@@ -136,6 +138,8 @@ options:
 > NOTE:
 > 
 > `parkit_folder2hpcdme` by default parks files under `/CCBR_Archive/GRIDFTP/Project_CCBR-12345/Analysis` unless the `--rawdata` flag is provided at command line. In that case, the tarball is parked at `/CCBR_Archive/GRIDFTP/Project_CCBR-12345/Rawdata`
+
+### `parkit_tarball2hpcdme`
 
 ```bash
 parkit_tarball2hpcdme --help
