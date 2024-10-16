@@ -48,6 +48,12 @@ def main():
         help="destination path in vault (Analysis collection goes under here)",
         required=True,
     )
+    parser_createmetadata.add_argument(
+        "--collectiontype", 
+        type=str, 
+        help="type of collection ... Analysis[default] or Rawdata", 
+        default="Analysis" # or Rawdata
+    )
 
     # Create a subcommand for "createemptycollection"
     parser_createemptycollection = subparsers.add_parser(
@@ -82,7 +88,7 @@ def main():
     parser_deposittar.add_argument(
         "--collectiontype", 
         type=str, 
-        help="path to tarball", 
+        help="type of collection ... Analysis[default] or Rawdata", 
         default="Analysis" # or Rawdata
     )
 
@@ -102,9 +108,9 @@ def main():
             args.dest, projectdesc=args.projectdesc, projecttitle=args.projecttitle
         )
     elif args.command == "createmetadata":
-        tar_json_path = createmetadata(args.tarball, args.dest)
+        tar_json_path = createmetadata(args.tarball, args.dest, args.collectiontype)
         files_created.append(tar_json_path)
-        filelist_json_path = createmetadata(args.tarball + ".filelist", args.dest)
+        filelist_json_path = createmetadata(args.tarball + ".filelist", args.dest, args.collectiontype)
         files_created.append(filelist_json_path)
     elif args.command == "deposittar":
         deposittocollection(args.tarball, args.dest, args.collectiontype)
