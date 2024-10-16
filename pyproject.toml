@@ -40,6 +40,7 @@ test = [
 parkit = "parkit.__main__:main"
 parkit_folder2hpcdme = "parkit.parkit_folder2hpcdme:main"
 parkit_tarball2hpcdme = "parkit.parkit_tarball2hpcdme:main"
+projark = "parkit.projark:main"
 update_collection_metadata = "parkit.update_collection_metadata:main"
 
 [tool.setuptools.dynamic]
