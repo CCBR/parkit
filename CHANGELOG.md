@@ -1,3 +1,12 @@
+## v2.1
+
+## Features/BugFixes
+
+- adding `collectiontype` to `createmetadata` command
+- excluding `*.tar.filelist` from `--cleanup` as it may need be put alongside README
+- create readme with `--makereadme` argument
+- `projark` subcommand for easy CCBR project backup
+
 ## v2.0.1
 
 ## Features/BugFixes
