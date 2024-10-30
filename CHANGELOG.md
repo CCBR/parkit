@@ -1,4 +1,10 @@
-## v2.1
+## v2.1.1
+
+## Features/BugFixes
+
+- fix loading `parkit_dev` conda env (#26)
+
+## v2.1.0
 
 ## Features/BugFixes
 

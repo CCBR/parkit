@@ -23,7 +23,8 @@ temp_script=$(mktemp)
 cat << EOF > "$temp_script"
 #!/bin/bash
 ${SOURCE_CONDA_CMD}
-conda activate parkit_dev
+# conda activate parkit_dev
+conda activate parkit
 export HPC_DM_UTILS=${hpcdmutilspath}
 echo \$HPC_DM_UTILS
 which parkit
