@@ -2,7 +2,9 @@ import os
 from parkit.src.utils import *
 
 hpc = ""
-if which("scontrol") != None:
+if os.environ.get("HOSTNAME") == "helix.nih.gov":
+    hpc = "helix"
+elif which("scontrol") != None:
     cmd = "scontrol show config"
 
     proc = run_cmd(
@@ -17,8 +19,6 @@ if which("scontrol") != None:
         hpc = "biowulf"
     elif "fsitgl" in proc.stdout:
         hpc = "frce"
-elif os.environ.get("HOSTNAME") == "helix.nih.gov":
-    hpc = "helix"
 
 if os.environ.get("HPC_DM_UTILS") is None:
     if os.environ.get("USER") == "kopardevn":
