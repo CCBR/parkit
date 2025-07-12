@@ -1,3 +1,14 @@
+## v2.2.0
+
+- Feature: Automatic object name resolution (fix #30)
+ - Added logic to detect and resolve naming conflicts by appending _002, _003, etc. to object names during deposit.
+ - Metadata .json and .filelist files are updated accordingly to reflect new names.
+
+- Enhancement: Java version management (fix #31)
+ - Introduced support for setting HPC_DM_JAVA_VERSION dynamically with a default fallback to 23.0.2 on Biowulf/Helix
+
+- Fixed ccr partition issue (fix #32)
+
 ## v2.1.3
 
 - fix scontrol issue on HELIX
