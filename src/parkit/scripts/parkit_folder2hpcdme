@@ -42,7 +42,7 @@ sbatch \
     --job-name="${jobname}" \
     --mail-type=BEGIN,END \
     --mem=120g \
-    --partition="ccr,norm" \
+    --partition="norm" \
     --time=24:00:00 \
     --cpus-per-task=2 ${dependency} \
     "$temp_script"
@@ -115,6 +115,10 @@ if [[ "${CLEANUP}" == "yes" ]];then
 	if [[ "$f" != "${TARBALL}.filelist" ]];then
           rm -iv $f
         fi
+    done
+    # cleanup _002 etc files if they exist
+    for f in ${FOLDER}_00[0-9].tar*; do
+        rm -iv "$f"
     done
     exit 0
 fi

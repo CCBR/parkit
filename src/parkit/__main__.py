@@ -113,7 +113,7 @@ def main():
         filelist_json_path = createmetadata(args.tarball + ".filelist", args.dest, args.collectiontype)
         files_created.append(filelist_json_path)
     elif args.command == "deposittar":
-        deposittocollection(args.tarball, args.dest, args.collectiontype)
+        files_deposited = deposittocollection(args.tarball, args.dest, args.collectiontype)
     for f in files_created:
         print(f"createmetadata: {f} file was created!")
 

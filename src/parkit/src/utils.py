@@ -101,7 +101,7 @@ def run_dm_cmd(dm_cmd, errormsg="", returnproc=False, exitiffails=True):
     #     'HPC_DM_UTILS': '/data/kopardevn/SandBox/HPC_DME_APIs/utils'
     # }
     # cmd = f"export HPC_DM_UTILS=/data/kopardevn/SandBox/HPC_DME_APIs/utils && source $HPC_DM_UTILS/functions && {dm_cmd}"
-    cmd = f"module load java/23.0.2 && source $HPC_DM_UTILS/functions && {dm_cmd}"
+    cmd = f"module load java/$HPC_DM_JAVA_VERSION && source $HPC_DM_UTILS/functions && {dm_cmd}"
     print(cmd)
     proc = subprocess.run(
         cmd,
