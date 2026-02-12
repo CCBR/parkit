@@ -96,7 +96,6 @@ ls /data/CCBR/projects/ccbr_12345.tar*
 ```
 
 ```bash
-
 # delete the recently parked project folder contents including hidden contents
 rm -rf /data/CCBR/projects/CCBR-12345/*
 
