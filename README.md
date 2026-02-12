@@ -37,6 +37,9 @@ conda activate parkit
 
 ```bash
 parkit --help
+```
+
+```
 usage: parkit [-h] {createtar,createmetadata,createemptycollection,deposittar} ...
 
 parkit subcommands to park data in HPCDME
@@ -85,8 +88,14 @@ parkit deposittar --tarball /data/CCBR/projects/ccbr_12345.tar --dest /CCBR_Arch
 
 # bunch of extra files are created in the process
 ls /data/CCBR/projects/ccbr_12345.tar*
+```
+
+```
 /data/CCBR/projects/ccbr_12345.tar           /data/CCBR/projects/ccbr_12345.tar.filelist.md5            /data/CCBR/projects/ccbr_12345.tar.md5
 /data/CCBR/projects/ccbr_12345.tar.filelist  /data/CCBR/projects/ccbr_12345.tar.filelist.metadata.json  /data/CCBR/projects/ccbr_12345.tar.metadata.json
+```
+
+```bash
 
 # delete the recently parked project folder contents including hidden contents
 rm -rf /data/CCBR/projects/CCBR-12345/*
@@ -114,6 +123,9 @@ If run with `--executor slurm` this interfaces with the job scheduler on Biowulf
 
 ```bash
 parkit_folder2hpcdme --help
+```
+
+```
 usage: parkit_folder2hpcdme [-h] [--restartfrom RESTARTFROM] [--executor EXECUTOR] [--folder FOLDER] [--dest DEST] [--projectdesc PROJECTDESC]
                             [--projecttitle PROJECTTITLE] [--rawdata] [--cleanup] --hpcdmutilspath HPCDMUTILSPATH [--version]
 
@@ -141,6 +153,9 @@ options:
 
 ```bash
 parkit_tarball2hpcdme --help
+```
+
+```
 usage: parkit_tarball2hpcdme [-h] [--restartfrom RESTARTFROM] [--executor EXECUTOR] [--tarball TARBALL] [--dest DEST]
                              [--projectdesc PROJECTDESC] [--projecttitle PROJECTTITLE] [--cleanup] --hpcdmutilspath HPCDMUTILSPATH
                              [--version]
@@ -165,7 +180,10 @@ options:
 ```
 
 ```bash
-> %projark --help
+projark --help
+```
+
+```
 usage: projark [-h] --folder FOLDER --projectnumber PROJECTNUMBER
                [--executor EXECUTOR] [--rawdata] [--cleanup]
 
