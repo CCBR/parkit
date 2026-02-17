@@ -9,6 +9,10 @@
 
 - Fixed ccr partition issue (fix #32)
 
+- Documentation: Improved code example readability in README
+ - Removed shell prompts (`%>`) from all code examples to enable direct copy-paste
+ - Separated bash commands from their output into distinct code blocks
+
 ## v2.1.3
 
 - fix scontrol issue on HELIX
