@@ -1,4 +1,3 @@
-import sys
 import os
 
 global __version__

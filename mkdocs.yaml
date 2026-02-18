@@ -19,7 +19,7 @@ theme:
     - navigation.tabs
     - navigation.top
     - navigation.indexes
-    - toc.integrate 
+    - toc.integrate
   palette:
     - scheme: default
       primary: indigo
@@ -43,7 +43,6 @@ plugins:
   - minify:
       minify_html: true
 
-
 # Customization
 extra:
   social:
@@ -55,7 +54,6 @@ extra:
       link: https://hub.docker.com/orgs/nciccbr/repositories
   version:
     provider: mike
-
 
 # Extensions
 markdown_extensions:

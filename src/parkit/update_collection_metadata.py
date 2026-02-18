@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 import argparse
 import pandas as pd
-import sys
 import os
 import json
 from uuid import uuid4
