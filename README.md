@@ -17,20 +17,48 @@ The analyst can use `parkit` to park these folders directly on to HPCDME's **CCB
 
 !!! note `projark` command is preferred for CCBR **proj**ect **ark**iving
 
-### Documentation Overview (v2.2.0-dev)
+### `projark` Quick Start (Recommended)
 
-For full documentation, use the versioned docs site generated from the `docs/` folder.
+`projark` is the preferred interface for archiving and retrieving CCBR project data.
 
-- Docs home: `docs/index.md`
-- Getting started and environment setup: `docs/getting-started.md`
-- CLI reference (`parkit` + sync commands): `docs/cli/parkit-overview.md`, `docs/cli/parkit-checkapisync.md`, `docs/cli/parkit-syncapi.md`
-- CLI reference (`projark`): `docs/cli/projark-overview.md`, `docs/cli/projark-deposit.md`, `docs/cli/projark-retrieve.md`
-- Recommended workflow: `projark deposit` at `docs/workflows/projark-deposit-workflow.md`
-- Retrieval workflows: `docs/workflows/projark-retrieve-selected.md`, `docs/workflows/projark-retrieve-full.md`
-- Classic manual `parkit` workflow (legacy/fallback): `docs/workflows/classic-parkit-manual.md`
-- Operational guidance and troubleshooting: `docs/operations.md`, `docs/troubleshooting.md`
-- Release notes: `docs/release-notes/v2.2.0-dev.md`
-- Legacy bash `projark` note: `docs/legacy.md`
+- `deposit`: archive a local project folder to HPC-DME.
+- `retrieve`: pull archived objects back from HPC-DME to local scratch.
+
+Version:
+
+```bash
+projark --version
+```
+
+Archive (`deposit`) example:
+
+```bash
+projark deposit --folder /data/CCBR/projects/CCBR-12345 --projectnumber 12345 --datatype Analysis
+```
+
+Retrieve selected files example:
+
+```bash
+projark retrieve --projectnumber 12345 --datatype Analysis --filenames new.tar_0001,new.tar_0002 --unsplit
+```
+
+Retrieve full collection example (omit `--filenames`):
+
+```bash
+projark retrieve --projectnumber 12345 --datatype Analysis --unsplit
+```
+
+Useful `deposit` flags:
+
+- `--tarname <name>.tar`: override default tar name.
+- `--split-size-gb <N>`: split threshold/chunk size (default `500` GB).
+- `--no-cleanup`: keep scratch artifacts after successful transfer.
+
+Useful `retrieve` flags:
+
+- `--filenames a,b,c`: retrieve specific objects.
+- `--unsplit` (alias `--unspilt`): merge downloaded split tar parts.
+- `--folder /path`: override default local base (`/scratch/$USER/CCBR-<projectnumber>`).
 
 ### Prerequisites:
 
@@ -40,9 +68,13 @@ For full documentation, use the versioned docs site generated from the `docs/` f
 mamba activate /vf/users/CCBR_Pipeliner/db/PipeDB/miniforge3/envs/parkit
 ```
 
-- [HPC_DME_APIs](https://github.com/CBIIT/HPC_DME_APIs) package needs to be cloned and set up correctly. Run `dm_generate_token` to successfully generate a token before running `parkit`.
+- `HPC_DME_APIs` package needs to be cloned and set up correctly. Follow this setup guide: https://ccbr.github.io/HowTos/docs/HPCDME/setup.html
 
 - **HPC_DM_UTILS** environmental variable should be preset before calling `parkit`. It also needs to be passed as an argument to `parkit_folder2hpcdme` and `parkit_tarball2hpcdme` end-to-end workflows.
+
+- **HPC_DM_JAVA_VERSION** minimum required value is `23` as of today.
+
+- Run all operations from a `tmux` or `screen` session.
 
 - If `mamba` is not already in your `PATH`, add the following block to your `~/.bashrc` or `~/.zshrc`, then run `mamba activate /vf/users/CCBR_Pipeliner/db/PipeDB/miniforge3/envs/parkit`:
 
