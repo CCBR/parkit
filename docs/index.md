@@ -4,7 +4,7 @@
 
 For most users, the recommended interface is `projark`, which provides guided `deposit` and `retrieve` workflows for entire CCBR project folder(s).
 
-## In This Version (`v2.2.0-dev`)
+## In This Version (`v3.0.0`)
 
 - New Python-native `projark` command with structured subcommands.
 - `projark deposit` for project archival with sync/host/session preflight checks.
@@ -30,4 +30,4 @@ projark retrieve --help
 
 - `projark` is intended for Helix (`helix.nih.gov`).
 - All runs should be executed in `tmux` or `screen`.
-- Docs are versioned; this set describes `v2.2.0-dev` behavior.
+- Docs are versioned; this set describes `v3.0.0` behavior.
