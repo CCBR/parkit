@@ -31,16 +31,15 @@
  - reference HPC_DME setup guide
  - document minimum Java requirement: `HPC_DM_JAVA_VERSION >= 23`
  - standardize guidance to run all operations in `tmux`/`screen`
+- Documentation: Improved code example readability in README. (#34, @kelly-sovacool)
 
 ## v2.2.0
 
 - Feature: Automatic object name resolution (fix #30)
- - Added logic to detect and resolve naming conflicts by appending _002, _003, etc. to object names during deposit.
- - Metadata .json and .filelist files are updated accordingly to reflect new names.
-
+  - Added logic to detect and resolve naming conflicts by appending \_002, \_003, etc. to object names during deposit.
+  - Metadata .json and .filelist files are updated accordingly to reflect new names.
 - Enhancement: Java version management (fix #31)
- - Introduced support for setting HPC_DM_JAVA_VERSION dynamically with a default fallback to 23.0.2 on Biowulf/Helix
-
+  - Introduced support for setting HPC_DM_JAVA_VERSION dynamically with a default fallback to 23.0.2 on Biowulf/Helix
 - Fixed ccr partition issue (fix #32)
 
 ## v2.1.3
@@ -49,13 +48,13 @@
 
 ## v2.1.1
 
-## Features/BugFixes
+### Features/BugFixes
 
 - fix loading `parkit_dev` conda env (#26)
 
 ## v2.1.0
 
-## Features/BugFixes
+### Features/BugFixes
 
 - adding `collectiontype` to `createmetadata` command
 - excluding `*.tar.filelist` from `--cleanup` as it may need be put alongside README
@@ -64,7 +63,7 @@
 
 ## v2.0.1
 
-## Features/BugFixes
+### Features/BugFixes
 
 - package renamed from `parkit_pkg` to `parkit`
 - reorganized package by recreating `src` folder

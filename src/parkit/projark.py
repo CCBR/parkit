@@ -81,7 +81,9 @@ def _run_sync_gate():
     _step(1, "checking HPC_DME_APIs sync status via parkit checkapisync ...")
     rc = check_hpc_dme_apis_sync()
     if rc != 0:
-        _info("Repository is not in sync. Please run 'parkit syncapi' first, then retry projark.")
+        _info(
+            "Repository is not in sync. Please run 'parkit syncapi' first, then retry projark."
+        )
         return False
     _ok("Sync check passed.")
     return True
@@ -112,7 +114,10 @@ def _require_terminal_multiplexer():
 def _collection_exists(collection_path):
     cmd = f"dm_get_collection {shlex.quote(collection_path)}"
     proc = run_dm_cmd(
-        dm_cmd=cmd, errormsg=f"Failed while checking collection {collection_path}", returnproc=True, exitiffails=False
+        dm_cmd=cmd,
+        errormsg=f"Failed while checking collection {collection_path}",
+        returnproc=True,
+        exitiffails=False,
     )
     return proc.returncode == 0
 
@@ -120,21 +125,28 @@ def _collection_exists(collection_path):
 def _dataobject_exists(object_path):
     cmd = f"dm_get_dataobject {shlex.quote(object_path)}"
     proc = run_dm_cmd(
-        dm_cmd=cmd, errormsg=f"Failed while checking object {object_path}", returnproc=True, exitiffails=False
+        dm_cmd=cmd,
+        errormsg=f"Failed while checking object {object_path}",
+        returnproc=True,
+        exitiffails=False,
     )
     return proc.returncode == 0
 
 
 def _register_collection(collection_path, collection_type):
     # Minimal metadata payload used to create a collection if it does not exist.
-    payload = {"metadataEntries": [{"attribute": "collection_type", "value": collection_type}]}
+    payload = {
+        "metadataEntries": [{"attribute": "collection_type", "value": collection_type}]
+    }
     with NamedTemporaryFile("w", suffix=".json", delete=False) as tmp:
         json.dump(payload, tmp, indent=2)
         temp_json = tmp.name
 
     try:
         cmd = f"dm_register_collection {shlex.quote(temp_json)} {shlex.quote(collection_path)}"
-        run_dm_cmd(dm_cmd=cmd, errormsg=f"Failed to create collection {collection_path}")
+        run_dm_cmd(
+            dm_cmd=cmd, errormsg=f"Failed to create collection {collection_path}"
+        )
     finally:
         if os.path.exists(temp_json):
             os.remove(temp_json)
@@ -189,7 +201,9 @@ def _split_if_needed(tar_path, split_size_gb):
         _info(f"Tar size is <= {split_size_gb:g}GB; split not needed.")
         return [tar_path]
 
-    _info(f"Tar size is > {split_size_gb:g}GB; splitting into {split_size_gb:g}GB chunks ...")
+    _info(
+        f"Tar size is > {split_size_gb:g}GB; splitting into {split_size_gb:g}GB chunks ..."
+    )
     split_prefix = str(tar_path) + "_"
     cmd = [
         "split",
@@ -278,7 +292,9 @@ def _run_deposit(args):
 def _parse_filenames(csv_value):
     filenames = [part.strip() for part in csv_value.split(",") if part.strip()]
     if not filenames:
-        raise ValueError("--filenames must contain at least one comma-separated file name.")
+        raise ValueError(
+            "--filenames must contain at least one comma-separated file name."
+        )
     return filenames
 
 
@@ -346,7 +362,9 @@ def _run_retrieve(args):
     if not user:
         return _error("USER environment variable is not set.")
 
-    base_local = Path(args.folder) if args.folder else Path("/scratch") / user / project_tag
+    base_local = (
+        Path(args.folder) if args.folder else Path("/scratch") / user / project_tag
+    )
     target_dir = base_local / datatype
     target_dir.mkdir(parents=True, exist_ok=True)
     _step(4, f"local download directory: {target_dir}")
@@ -379,7 +397,9 @@ def _run_retrieve(args):
         # <base_local>/<datatype>/...
         # and avoid nested paths like <base_local>/<datatype>/<datatype>/...
         cmd = f"dm_download_collection {shlex.quote(datatype_collection)} {shlex.quote(str(base_local))}"
-        run_dm_cmd(dm_cmd=cmd, errormsg=f"Failed to download collection {datatype_collection}")
+        run_dm_cmd(
+            dm_cmd=cmd, errormsg=f"Failed to download collection {datatype_collection}"
+        )
         _ok(f"Downloaded full collection: {datatype_collection}")
         _step(7, "per-file verification skipped in full collection mode.")
 

@@ -1,0 +1,26 @@
+cff-version: 1.2.0
+message: Please cite parkit as below
+authors:
+  - family-names: Koparde
+    given-names: Vishal
+    orcid: https://orcid.org/0000-0001-8978-8495
+    affiliation:
+      Advanced Biomedical Computational Science, Frederick National Laboratory
+      for Cancer Research, Frederick, MD 21702, USA
+  - family-names: Sovacool
+    given-names: Kelly
+    orcid: https://orcid.org/0000-0003-3283-829X
+    affiliation:
+      Advanced Biomedical Computational Science, Frederick National Laboratory
+      for Cancer Research, Frederick, MD 21702, USA
+title: "parkit: Park an archived project toolkit"
+url: https://ccbr.github.io/parkit/
+repository-code: https://github.com/CCBR/parkit
+license: MIT
+type: software
+# identifiers:
+#   - description: Archived snapshots of all versions
+#     type: doi
+#     value: 10.5281/zenodo.13377166
+version: v2.2.0
+date-released: "2025-07-12"

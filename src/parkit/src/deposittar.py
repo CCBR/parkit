@@ -4,7 +4,6 @@ from uuid import uuid4
 import json
 import os
 
-import json
 
 def update_object_name(input_json_path, new_object_name, new_alias, output_json_path):
     """
@@ -17,7 +16,7 @@ def update_object_name(input_json_path, new_object_name, new_alias, output_json_
         new_alias (str): New value to assign to the 'alias' attribute.
         output_json_path (str): Path to the output JSON file.
     """
-    with open(input_json_path, 'r') as infile:
+    with open(input_json_path, "r") as infile:
         data = json.load(infile)
 
     found = False
@@ -51,7 +50,7 @@ def update_object_name(input_json_path, new_object_name, new_alias, output_json_
     if not found:
         raise ValueError("alias attribute not found in metadataEntries.")
 
-    with open(output_json_path, 'w') as outfile:
+    with open(output_json_path, "w") as outfile:
         json.dump(data, outfile, indent=4)
 
     print(f"Updated JSON written to {output_json_path}")
@@ -85,33 +84,28 @@ def write_json(objectPath, outJSON):
         "compoundQuery": {
             "operator": "AND",
             "queries": [
-                {
-                    "attribute": "object_name",
-                    "value": objectPath,
-                    "operator": "EQUAL"
-                }
-            ]
+                {"attribute": "object_name", "value": objectPath, "operator": "EQUAL"}
+            ],
         },
         "detailedResponse": False,
         "page": 1,
-        "totalCount": True
+        "totalCount": True,
     }
 
-    with open(outJSON, 'w') as f:
+    with open(outJSON, "w") as f:
         json.dump(data, f, indent=4)
 
     print(f"JSON file written to {outJSON}")
     return True
 
 
-
 def check_if_object_exists(objectPath):
     """
     Check if a data object exists in the specified collection path.
-    
+
     Parameters:
     - objectPath: Path to the data object on the objectstore.
-    
+
     Returns:
     - True if the object exists, False otherwise.
     """
@@ -122,7 +116,7 @@ def check_if_object_exists(objectPath):
         dm_cmd=cmd,
         errormsg="check_if_object_exists: dm_query_dataobject Failed!",
         returnproc=True,
-        exitiffails=False
+        exitiffails=False,
     )
     os.remove(jsonName)
     if proc.returncode != 0:
@@ -138,9 +132,18 @@ def check_if_object_exists(objectPath):
 
 # List of known compound extensions to support
 COMPOUND_EXTENSIONS = [
-    ".tar.gz", ".tar.bz2", ".tar.xz", ".fastq.gz", ".fq.gz",
-    ".bam.bai", ".vcf.gz", ".fa.gz", ".fasta.gz", ".gtf.gz"
+    ".tar.gz",
+    ".tar.bz2",
+    ".tar.xz",
+    ".fastq.gz",
+    ".fq.gz",
+    ".bam.bai",
+    ".vcf.gz",
+    ".fa.gz",
+    ".fasta.gz",
+    ".gtf.gz",
 ]
+
 
 def split_compound_extension(filename):
     """
@@ -148,9 +151,10 @@ def split_compound_extension(filename):
     """
     for ext in sorted(COMPOUND_EXTENSIONS, key=len, reverse=True):
         if filename.endswith(ext):
-            return filename[:-len(ext)], ext
+            return filename[: -len(ext)], ext
     # fallback to default single extension split
     return os.path.splitext(filename)
+
 
 def get_available_object_path(original_path):
     """
@@ -179,10 +183,11 @@ def get_available_object_path(original_path):
         count += 1
 
 
-def deposittocollection(tar, collectionpath, collectiontype): # collectiontype="Rawdata" for rawdata or "Analysis" for analysis
-
+def deposittocollection(
+    tar, collectionpath, collectiontype
+):  # collectiontype="Rawdata" for rawdata or "Analysis" for analysis
     p = Path(tar)
-    p = p.absolute() # p is tar
+    p = p.absolute()  # p is tar
     tar = str(p)
     tarmetadata = tar + ".metadata.json"
     tarfilelist = tar + ".filelist"
@@ -190,7 +195,9 @@ def deposittocollection(tar, collectionpath, collectiontype): # collectiontype="
 
     analysis_collectionpath = collectionpath + "/" + collectiontype
     expected_tar_collectionpath = analysis_collectionpath + "/" + p.name
-    tar_collectionpath = get_available_object_path(analysis_collectionpath + "/" + p.name)
+    tar_collectionpath = get_available_object_path(
+        analysis_collectionpath + "/" + p.name
+    )
     tarfilelist_collectionpath = tar_collectionpath + ".filelist"
     print(f"tar_collectionpath: {tar_collectionpath}")
     print(f"tarfilelist_collectionpath: {tarfilelist_collectionpath}")
@@ -200,7 +207,9 @@ def deposittocollection(tar, collectionpath, collectiontype): # collectiontype="
         new_tar_basename = os.path.basename(tar_collectionpath)
 
         new_tar = str(os.path.join(tar_dirname, new_tar_basename))
-        new_tar_filelist = str(os.path.join(tar_dirname, new_tar_basename + ".filelist"))
+        new_tar_filelist = str(
+            os.path.join(tar_dirname, new_tar_basename + ".filelist")
+        )
 
         # Rename the tar file to the new path
         os.replace(tar, new_tar)
@@ -210,11 +219,20 @@ def deposittocollection(tar, collectionpath, collectiontype): # collectiontype="
         tarfilelist = new_tar_filelist
 
         # Update the tar metadata and filelist metadata paths
-        updated_tarmetadata = str(os.path.join(tar_dirname, new_tar_basename + ".metadata.json"))
-        updated_tarfilelistmetadata = str(os.path.join(tar_dirname, new_tar_basename + ".filelist.metadata.json"))
+        updated_tarmetadata = str(
+            os.path.join(tar_dirname, new_tar_basename + ".metadata.json")
+        )
+        updated_tarfilelistmetadata = str(
+            os.path.join(tar_dirname, new_tar_basename + ".filelist.metadata.json")
+        )
         # Update metadata.json files to reflect the new object name
         update_object_name(tarmetadata, tar_collectionpath, tar, updated_tarmetadata)
-        update_object_name(tarfilelistmetadata, tarfilelist_collectionpath, tarfilelist, updated_tarfilelistmetadata)
+        update_object_name(
+            tarfilelistmetadata,
+            tarfilelist_collectionpath,
+            tarfilelist,
+            updated_tarfilelistmetadata,
+        )
 
         tarmetadata = updated_tarmetadata
         tarfilelistmetadata = updated_tarfilelistmetadata
@@ -226,13 +244,11 @@ def deposittocollection(tar, collectionpath, collectiontype): # collectiontype="
 
     files_deposited = list()
 
-    cmd = (
-        f"dm_register_dataobject_multipart {tarmetadata} {tar_collectionpath} {tar}"
-    )
+    cmd = f"dm_register_dataobject_multipart {tarmetadata} {tar_collectionpath} {tar}"
     proc = run_dm_cmd(
         dm_cmd=cmd,
         errormsg="deposittocollection: dm_register_dataobject_multipart Failed!",
-        returnproc=True
+        returnproc=True,
     )
     if proc.returncode == 0:
         files_deposited.append(tar_collectionpath)
@@ -241,7 +257,9 @@ def deposittocollection(tar, collectionpath, collectiontype): # collectiontype="
     cmd = f"dm_register_dataobject_multipart {tarfilelistmetadata} {tarfilelist_collectionpath} {tarfilelist}"
     # cmd = f"dm_register_dataobject {tarfilelistmetadata} {tarfilelist_collectionpath} {tarfilelist}"
     proc = run_dm_cmd(
-        dm_cmd=cmd, errormsg="deposittocollection: dm_register_dataobject Failed!", returnproc=True
+        dm_cmd=cmd,
+        errormsg="deposittocollection: dm_register_dataobject Failed!",
+        returnproc=True,
     )
     if proc.returncode == 0:
         files_deposited.append(tarfilelist_collectionpath)
