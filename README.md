@@ -17,33 +17,72 @@ The analyst can use `parkit` to park these folders directly on to HPCDME's **CCB
 
 !!! note `projark` command is preferred for CCBR **proj**ect **ark**iving
 
+### Documentation Overview (v2.2.0-dev)
+
+For full documentation, use the versioned docs site generated from the `docs/` folder.
+
+- Docs home: `docs/index.md`
+- Getting started and environment setup: `docs/getting-started.md`
+- CLI reference (`parkit` + sync commands): `docs/cli/parkit-overview.md`, `docs/cli/parkit-checkapisync.md`, `docs/cli/parkit-syncapi.md`
+- CLI reference (`projark`): `docs/cli/projark-overview.md`, `docs/cli/projark-deposit.md`, `docs/cli/projark-retrieve.md`
+- Recommended workflow: `projark deposit` at `docs/workflows/projark-deposit-workflow.md`
+- Retrieval workflows: `docs/workflows/projark-retrieve-selected.md`, `docs/workflows/projark-retrieve-full.md`
+- Classic manual `parkit` workflow (legacy/fallback): `docs/workflows/classic-parkit-manual.md`
+- Operational guidance and troubleshooting: `docs/operations.md`, `docs/troubleshooting.md`
+- Release notes: `docs/release-notes/v2.2.0-dev.md`
+- Legacy bash `projark` note: `docs/legacy.md`
+
 ### Prerequisites:
 
 - On helix or biowulf you can get access to `parkit` by loading the appropriate conda env
 
 ```bash
-%> . "/data/CCBR_Pipeliner/db/PipeDB/Conda/etc/profile.d/conda.sh"
-%> conda activate parkit
+mamba activate /vf/users/CCBR_Pipeliner/db/PipeDB/miniforge3/envs/parkit
 ```
 
 - [HPC_DME_APIs](https://github.com/CBIIT/HPC_DME_APIs) package needs to be cloned and set up correctly. Run `dm_generate_token` to successfully generate a token before running `parkit`.
 
 - **HPC_DM_UTILS** environmental variable should be preset before calling `parkit`. It also needs to be passed as an argument to `parkit_folder2hpcdme` and `parkit_tarball2hpcdme` end-to-end workflows.
 
+- If `mamba` is not already in your `PATH`, add the following block to your `~/.bashrc` or `~/.zshrc`, then run `mamba activate /vf/users/CCBR_Pipeliner/db/PipeDB/miniforge3/envs/parkit`:
+
+```bash
+# >>> mamba initialize >>>
+# !! Contents within this block are managed by 'mamba shell init' !!
+export MAMBA_EXE='/vf/users/CCBR_Pipeliner/db/PipeDB/miniforge3/bin/mamba';
+export MAMBA_ROOT_PREFIX='/vf/users/CCBR_Pipeliner/db/PipeDB/miniforge3';
+__mamba_setup="$("$MAMBA_EXE" shell hook --shell zsh --root-prefix "$MAMBA_ROOT_PREFIX" 2> /dev/null)"
+if [ $? -eq 0 ]; then
+    eval "$__mamba_setup"
+else
+    alias mamba="$MAMBA_EXE"  # Fallback on help from mamba activate
+fi
+unset __mamba_setup
+# <<< mamba initialize <<<
+```
+
 !!! warning If not on helix or biowulf then you will have to **clone** the repo and **pip install** it. Then setup [HPC_DME_APIs](https://github.com/CBIIT/HPC_DME_APIs) appropriately.
 
 ### Usage:
 
 ```bash
-%> parkit --help
-usage: parkit [-h] {createtar,createmetadata,createemptycollection,deposittar} ...
+parkit --help
+```
+
+Output:
+
+```text
+usage: parkit [-h] {createtar,tarprep,checkapisync,syncapi,createmetadata,createemptycollection,deposittar} ...
 
 parkit subcommands to park data in HPCDME
 
 positional arguments:
-  {createtar,createmetadata,createemptycollection,deposittar}
+  {createtar,tarprep,checkapisync,syncapi,createmetadata,createemptycollection,deposittar}
                         Subcommand to run
     createtar           create tarball(and its filelist) from a project folder.
+    tarprep             prepare tarball for upload.
+    checkapisync        check whether the HPC_DME_APIs repository is in sync with upstream
+    syncapi             sync HPC_DME_APIs with upstream and generate a fresh token
     createmetadata      create the metadata.json file required for a tarball (and its filelist)
     createemptycollection
                         creates empty project and analysis collections
@@ -53,6 +92,95 @@ options:
   -h, --help            show this help message and exit
 ```
 
+### `parkit checkapisync`
+
+Check whether your local `HPC_DME_APIs` git repository is synchronized with its upstream remote.
+
+- Repo resolution order:
+  1. `HPC_DME_APIs` environment variable
+  2. Parent directory of `HPC_DM_UTILS` (if it ends with `utils`)
+  3. Fallback path: `/data/kopardevn/SandBox/HPC_DME_APIs`
+- Optional override:
+  - `parkit checkapisync --repo /path/to/HPC_DME_APIs`
+
+Example:
+
+```bash
+parkit checkapisync
+```
+
+Output:
+
+```text
+WARNING:HPC_DM_JAVA_VERSION is not set, setting it to 23.0.2
+WARNING:If you need a different version, please set it explicitly in your environment.
+HPC_DME_APIs=/data/kopardevn/GitRepos/HPC_DME_APIs
+branch=master
+local=08a93b22a74bb51455489b70bcc36ea528c74d23
+remote=9d01b7b6686266707c9720285aecefd4f46323f3
+base=dabfe0a5789ba89a1f17f1c0868eaad284f0b62a
+OUT OF SYNC: local and upstream have diverged.
+```
+
+### `parkit syncapi`
+
+Sync local `HPC_DME_APIs` and generate a fresh API token.
+You can also use this command just to generate/refresh a new token (even if git is already up to date).
+
+What it does:
+- resolves `HPC_DME_APIs` repo path
+- runs `git pull`
+- runs `source <repo>/functions && dm_generate_token`
+- prompts for password/token input interactively in your terminal
+- prints success message on completion
+
+Example:
+
+```bash
+parkit syncapi
+```
+
+Output:
+
+```text
+HPC_DME_APIs=/data/kopardevn/GitRepos/HPC_DME_APIs
+... git pull output ...
+... dm_generate_token prompts for password ...
+Now you are in sync and ready to run other parkit commands.
+```
+
+Example failure and interpretation:
+
+```bash
+parkit syncapi
+```
+
+Output:
+
+```text
+WARNING:HPC_DM_JAVA_VERSION is not set, setting it to 23.0.2
+WARNING:If you need a different version, please set it explicitly in your environment.
+HPC_DME_APIs=/data/kopardevn/GitRepos/HPC_DME_APIs
+Merge made by the 'recursive' strategy.
+ .github/workflows/build-deploy-api.yml | 8 ++++++--
+ .github/workflows/build-dev-api.yml    | 4 +++-
+ .github/workflows/deploy-dev-api.yml   | 4 +++-
+ 3 files changed, 12 insertions(+), 4 deletions(-)
+Enter host password for user 'kopardevn':
+  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+                                 Dload  Upload   Total   Spent    Left  Speed
+100  6065    0  6065    0     0  49713      0 --:--:-- --:--:-- --:--:-- 49713
+ERROR: No token found in /data/kopardevn/GitRepos/HPC_DME_APIs/utils/temp/log
+ERROR MESSAGE: Access Denied: LDAP authentication failed
+syncapi failed: dm_generate_token was not successful.
+```
+
+What this means:
+- `git pull` succeeded (your local API repo updated).
+- Token generation failed at authentication time (`LDAP authentication failed`).
+- You are synced to latest code, but not ready for data operations until token generation succeeds.
+- Re-run `parkit syncapi` and enter valid credentials; if it still fails, inspect `HPC_DME_APIs/utils/temp/log`.
+
 ### Example:
 
 - Say you want to archive `/data/CCBR/projects/CCBR-12345` folder to `/CCBR_Archive/GRIDFTP/Project_CCBR-12345` collection on HPC-DME
@@ -60,7 +188,7 @@ options:
 
 ```bash
 # create the tarball
-%> parkit createtar --folder /data/CCBR/projects/ccbr_12345
+parkit createtar --folder /data/CCBR/projects/ccbr_12345
 # the above command will creates the following files:
 # - ccbr_12345.tar
 # - ccbr_12345.tar.md5
@@ -68,37 +196,42 @@ options:
 # - ccbr_12345.tar.filelist.md5
 
 # create an empty collection on HPC-DME
-%> parkit createemptycollection --dest /CCBR_Archive/GRIDFTP/Project_CCBR-12345 --projectdesc "testing" --projecttitle "test project 1"
+parkit createemptycollection --dest /CCBR_Archive/GRIDFTP/Project_CCBR-12345 --projectdesc "testing" --projecttitle "test project 1"
 # the above command creates collections:
 # - /CCBR_Archive/GRIDFTP/Project_CCBR-12345
 # - /CCBR_Archive/GRIDFTP/Project_CCBR-12345/Analysis
 # - /CCBR_Archive/GRIDFTP/Project_CCBR-12345/Rawdata
 
 # create required metadata
-%> parkit createmetadata --tarball /data/CCBR/projects/ccbr_12345.tar --dest /CCBR_Archive/GRIDFTP/Project_CCBR-12345
+parkit createmetadata --tarball /data/CCBR/projects/ccbr_12345.tar --dest /CCBR_Archive/GRIDFTP/Project_CCBR-12345
 # if ccbr_12345.tar is rawdata then "--collectiontype Rawdata" argument needs to be added to the above commandline
 
 # deposit the tar into HPC-DME
-%> parkit deposittar --tarball /data/CCBR/projects/ccbr_12345.tar --dest /CCBR_Archive/GRIDFTP/Project_CCBR-12345
+parkit deposittar --tarball /data/CCBR/projects/ccbr_12345.tar --dest /CCBR_Archive/GRIDFTP/Project_CCBR-12345
 # if ccbr_12345.tar is rawdata then "--collectiontype Rawdata" argument needs to be added to the above commandline
 
 # bunch of extra files are created in the process
-%> ls /data/CCBR/projects/ccbr_12345.tar*
-/data/CCBR/projects/ccbr_12345.tar           /data/CCBR/projects/ccbr_12345.tar.filelist.md5            /data/CCBR/projects/ccbr_12345.tar.md5
-/data/CCBR/projects/ccbr_12345.tar.filelist  /data/CCBR/projects/ccbr_12345.tar.filelist.metadata.json  /data/CCBR/projects/ccbr_12345.tar.metadata.json
+ls /data/CCBR/projects/ccbr_12345.tar*
 
 # delete the recently parked project folder contents including hidden contents
-%> rm -rf /data/CCBR/projects/CCBR-12345/*
+rm -rf /data/CCBR/projects/CCBR-12345/*
 
 # copy filelist into the empty project folder for future quick reference
-%> cp /data/CCBR/projects/ccbr_12345.tar.filelist /data/CCBR/projects/CCBR-12345/ccbr_12345.tar.filelist
+cp /data/CCBR/projects/ccbr_12345.tar.filelist /data/CCBR/projects/CCBR-12345/ccbr_12345.tar.filelist
 
 # delete files created by parkit
-%> rm -f /data/CCBR/projects/ccbr_12345.tar*
+rm -f /data/CCBR/projects/ccbr_12345.tar*
 
 # test results with
-%> dm_get_collection /CCBR_Archive/GRIDFTP/Project_CCBR-12345
+dm_get_collection /CCBR_Archive/GRIDFTP/Project_CCBR-12345
 # Done!
+```
+
+Output from `ls /data/CCBR/projects/ccbr_12345.tar*`:
+
+```text
+/data/CCBR/projects/ccbr_12345.tar           /data/CCBR/projects/ccbr_12345.tar.filelist.md5            /data/CCBR/projects/ccbr_12345.tar.md5
+/data/CCBR/projects/ccbr_12345.tar.filelist  /data/CCBR/projects/ccbr_12345.tar.filelist.metadata.json  /data/CCBR/projects/ccbr_12345.tar.metadata.json
 ```
 
 We also have end-to-end slurm-supported folder-to-hpcdme and tarball-to-hpcdme workflows:
@@ -112,7 +245,12 @@ If run with `--executor slurm` this interfaces with the job scheduler on Biowulf
 ### `parkit_folder2hpcdme`
 
 ```bash
-%> parkit_folder2hpcdme --help
+parkit_folder2hpcdme --help
+```
+
+Output:
+
+```text
 usage: parkit_folder2hpcdme [-h] [--restartfrom RESTARTFROM] [--executor EXECUTOR] [--folder FOLDER] [--dest DEST] [--projectdesc PROJECTDESC]
                             [--projecttitle PROJECTTITLE] [--rawdata] [--cleanup] --hpcdmutilspath HPCDMUTILSPATH [--version]
 
@@ -141,7 +279,12 @@ options:
 ### `parkit_tarball2hpcdme`
 
 ```bash
-%> parkit_tarball2hpcdme --help
+parkit_tarball2hpcdme --help
+```
+
+Output:
+
+```text
 usage: parkit_tarball2hpcdme [-h] [--restartfrom RESTARTFROM] [--executor EXECUTOR] [--tarball TARBALL] [--dest DEST]
                              [--projectdesc PROJECTDESC] [--projecttitle PROJECTTITLE] [--cleanup] --hpcdmutilspath HPCDMUTILSPATH
                              [--version]
@@ -166,20 +309,30 @@ options:
 ```
 
 ```bash
-> %projark --help
-usage: projark [-h] --folder FOLDER --projectnumber PROJECTNUMBER
-               [--executor EXECUTOR] [--rawdata] [--cleanup]
+projark --help
+```
 
-Wrapper for folder2hpcdme for quick CCBR project archiving!
+Output:
 
-options:
-  -h, --help            show this help message and exit
-  --folder FOLDER       Input folder path to archive
-  --projectnumber PROJECTNUMBER
-                        CCBR project number.. destination will be
-                        /CCBR_Archive/GRIDFTP/Project_CCBR-<projectnumber>
-  --executor EXECUTOR   slurm or local
-  --rawdata             If tarball is rawdata and needs to go under folder
-                        Rawdata
-  --cleanup             post transfer step to delete local files
+```text
+usage: projark [-h] [-v] {deposit,retrieve} ...
+
+projark: project archival helper built on parkit
+```
+
+`projark` now provides two subcommands:
+
+- `deposit`: archive a local project folder to HPC-DME.
+- `retrieve`: fetch selected archived files back to local scratch.
+
+Example `deposit`:
+
+```bash
+projark deposit --folder /data/CCBR/projects/ccbr_1234 --projectnumber ccbr_1234 --datatype analysis
+```
+
+Example `retrieve`:
+
+```bash
+projark retrieve --projectnumber CCBR-1234 --datatype Rawdata --filenames ccbr1234.tar_0001,ccbr1234.tar_0002 --unspilt
 ```
