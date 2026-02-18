@@ -23,8 +23,8 @@ The analyst can use `parkit` to park these folders directly on to HPCDME's **CCB
 - On helix or biowulf you can get access to `parkit` by loading the appropriate conda env
 
 ```bash
-%> . "/data/CCBR_Pipeliner/db/PipeDB/Conda/etc/profile.d/conda.sh"
-%> conda activate parkit
+. "/data/CCBR_Pipeliner/db/PipeDB/Conda/etc/profile.d/conda.sh"
+conda activate parkit
 ```
 
 - [HPC_DME_APIs](https://github.com/CBIIT/HPC_DME_APIs) package needs to be cloned and set up correctly. Run `dm_generate_token` to successfully generate a token before running `parkit`.
@@ -36,7 +36,10 @@ The analyst can use `parkit` to park these folders directly on to HPCDME's **CCB
 ### Usage:
 
 ```bash
-%> parkit --help
+parkit --help
+```
+
+```
 usage: parkit [-h] {createtar,createmetadata,createemptycollection,deposittar} ...
 
 parkit subcommands to park data in HPCDME
@@ -61,7 +64,7 @@ options:
 
 ```bash
 # create the tarball
-%> parkit createtar --folder /data/CCBR/projects/ccbr_12345
+parkit createtar --folder /data/CCBR/projects/ccbr_12345
 # the above command will creates the following files:
 # - ccbr_12345.tar
 # - ccbr_12345.tar.md5
@@ -69,36 +72,41 @@ options:
 # - ccbr_12345.tar.filelist.md5
 
 # create an empty collection on HPC-DME
-%> parkit createemptycollection --dest /CCBR_Archive/GRIDFTP/Project_CCBR-12345 --projectdesc "testing" --projecttitle "test project 1"
+parkit createemptycollection --dest /CCBR_Archive/GRIDFTP/Project_CCBR-12345 --projectdesc "testing" --projecttitle "test project 1"
 # the above command creates collections:
 # - /CCBR_Archive/GRIDFTP/Project_CCBR-12345
 # - /CCBR_Archive/GRIDFTP/Project_CCBR-12345/Analysis
 # - /CCBR_Archive/GRIDFTP/Project_CCBR-12345/Rawdata
 
 # create required metadata
-%> parkit createmetadata --tarball /data/CCBR/projects/ccbr_12345.tar --dest /CCBR_Archive/GRIDFTP/Project_CCBR-12345
+parkit createmetadata --tarball /data/CCBR/projects/ccbr_12345.tar --dest /CCBR_Archive/GRIDFTP/Project_CCBR-12345
 # if ccbr_12345.tar is rawdata then "--collectiontype Rawdata" argument needs to be added to the above commandline
 
 # deposit the tar into HPC-DME
-%> parkit deposittar --tarball /data/CCBR/projects/ccbr_12345.tar --dest /CCBR_Archive/GRIDFTP/Project_CCBR-12345
+parkit deposittar --tarball /data/CCBR/projects/ccbr_12345.tar --dest /CCBR_Archive/GRIDFTP/Project_CCBR-12345
 # if ccbr_12345.tar is rawdata then "--collectiontype Rawdata" argument needs to be added to the above commandline
 
 # bunch of extra files are created in the process
-%> ls /data/CCBR/projects/ccbr_12345.tar*
+ls /data/CCBR/projects/ccbr_12345.tar*
+```
+
+```
 /data/CCBR/projects/ccbr_12345.tar           /data/CCBR/projects/ccbr_12345.tar.filelist.md5            /data/CCBR/projects/ccbr_12345.tar.md5
 /data/CCBR/projects/ccbr_12345.tar.filelist  /data/CCBR/projects/ccbr_12345.tar.filelist.metadata.json  /data/CCBR/projects/ccbr_12345.tar.metadata.json
+```
 
+```bash
 # delete the recently parked project folder contents including hidden contents
-%> rm -rf /data/CCBR/projects/CCBR-12345/*
+rm -rf /data/CCBR/projects/CCBR-12345/*
 
 # copy filelist into the empty project folder for future quick reference
-%> cp /data/CCBR/projects/ccbr_12345.tar.filelist /data/CCBR/projects/CCBR-12345/ccbr_12345.tar.filelist
+cp /data/CCBR/projects/ccbr_12345.tar.filelist /data/CCBR/projects/CCBR-12345/ccbr_12345.tar.filelist
 
 # delete files created by parkit
-%> rm -f /data/CCBR/projects/ccbr_12345.tar*
+rm -f /data/CCBR/projects/ccbr_12345.tar*
 
 # test results with
-%> dm_get_collection /CCBR_Archive/GRIDFTP/Project_CCBR-12345
+dm_get_collection /CCBR_Archive/GRIDFTP/Project_CCBR-12345
 # Done!
 ```
 
@@ -113,7 +121,10 @@ If run with `--executor slurm` this interfaces with the job scheduler on Biowulf
 ### `parkit_folder2hpcdme`
 
 ```bash
-%> parkit_folder2hpcdme --help
+parkit_folder2hpcdme --help
+```
+
+```
 usage: parkit_folder2hpcdme [-h] [--restartfrom RESTARTFROM] [--executor EXECUTOR] [--folder FOLDER] [--dest DEST] [--projectdesc PROJECTDESC]
                             [--projecttitle PROJECTTITLE] [--rawdata] [--cleanup] --hpcdmutilspath HPCDMUTILSPATH [--version]
 
@@ -140,7 +151,10 @@ options:
 ### `parkit_tarball2hpcdme`
 
 ```bash
-%> parkit_tarball2hpcdme --help
+parkit_tarball2hpcdme --help
+```
+
+```
 usage: parkit_tarball2hpcdme [-h] [--restartfrom RESTARTFROM] [--executor EXECUTOR] [--tarball TARBALL] [--dest DEST]
                              [--projectdesc PROJECTDESC] [--projecttitle PROJECTTITLE] [--cleanup] --hpcdmutilspath HPCDMUTILSPATH
                              [--version]
@@ -165,7 +179,10 @@ options:
 ```
 
 ```bash
-> %projark --help
+projark --help
+```
+
+```
 usage: projark [-h] --folder FOLDER --projectnumber PROJECTNUMBER
                [--executor EXECUTOR] [--rawdata] [--cleanup]
 
