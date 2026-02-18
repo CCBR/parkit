@@ -3,6 +3,7 @@
 **Park** an **arc**hived project tool**kit**!
 
 [![build](https://github.com/CCBR/parkit/actions/workflows/build-python.yml/badge.svg)](https://github.com/CCBR/parkit/actions/workflows/build-python.yml)
+[![codecov](https://codecov.io/gh/CCBR/parkit/graph/badge.svg?token=MTZ8D3RLNT)](https://codecov.io/gh/CCBR/parkit)
 
 > DISCLAIMERS:
 >
