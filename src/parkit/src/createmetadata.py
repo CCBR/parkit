@@ -1,10 +1,11 @@
 from pathlib import Path
 import json
-from uuid import uuid4
 from parkit.src.utils import *
 
 
-def createmetadata(infile, collectionpath, collectiontype): # collectiontype="Rawdata" for rawdata or "Analysis" for analysis
+def createmetadata(
+    infile, collectionpath, collectiontype
+):  # collectiontype="Rawdata" for rawdata or "Analysis" for analysis
     p = Path(infile)
     p = p.absolute()
 

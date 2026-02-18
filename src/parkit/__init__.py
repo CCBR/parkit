@@ -30,9 +30,9 @@ if os.environ.get("HPC_DM_UTILS") is None:
         )
 
 if hpc == "biowulf" or hpc == "helix":
-    os.environ[
-        "SOURCE_CONDA_CMD"
-    ] = '. "/data/CCBR_Pipeliner/db/PipeDB/Conda/etc/profile.d/conda.sh"'
+    os.environ["SOURCE_CONDA_CMD"] = (
+        '. "/data/CCBR_Pipeliner/db/PipeDB/Conda/etc/profile.d/conda.sh"'
+    )
 else:
     errorout("SOURCE_CONDA_CMD environmental variable needs to be set explicitly!")
 
