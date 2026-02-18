@@ -93,7 +93,6 @@ unset __mamba_setup
 # <<< mamba initialize <<<
 ```
 
-!!! warning If not on helix or biowulf then you will have to **clone** the repo and **pip install** it. Then setup [HPC_DME_APIs](https://github.com/CBIIT/HPC_DME_APIs) appropriately.
 
 ### Usage:
 
@@ -340,31 +339,3 @@ options:
   --version             print version
 ```
 
-```bash
-projark --help
-```
-
-Output:
-
-```text
-usage: projark [-h] [-v] {deposit,retrieve} ...
-
-projark: project archival helper built on parkit
-```
-
-`projark` now provides two subcommands:
-
-- `deposit`: archive a local project folder to HPC-DME.
-- `retrieve`: fetch selected archived files back to local scratch.
-
-Example `deposit`:
-
-```bash
-projark deposit --folder /data/CCBR/projects/ccbr_1234 --projectnumber ccbr_1234 --datatype analysis
-```
-
-Example `retrieve`:
-
-```bash
-projark retrieve --projectnumber CCBR-1234 --datatype Rawdata --filenames ccbr1234.tar_0001,ccbr1234.tar_0002 --unspilt
-```
