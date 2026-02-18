@@ -5,6 +5,8 @@ from parkit.src.createtar import createtar, tarprep
 from parkit.src.createmetadata import createmetadata
 from parkit.src.createemptycollection import createemptycollection
 from parkit.src.deposittar import deposittocollection
+from parkit.src.checkapisync import check_hpc_dme_apis_sync
+from parkit.src.syncapi import syncapi
 from parkit.src.VersionCheck import __version__
 
 
@@ -34,6 +36,32 @@ def main():
     )
     parser_tarprep.add_argument(
         "--tarball", type=str, help="path to tar file", required=True
+    )
+
+    # Create a subcommand for "checkapisync"
+    parser_checkapisync = subparsers.add_parser(
+        "checkapisync",
+        help="check whether the HPC_DME_APIs repository is in sync with upstream",
+    )
+    parser_checkapisync.add_argument(
+        "--repo",
+        type=str,
+        help="optional path to HPC_DME_APIs repository (overrides env/fallback)",
+        required=False,
+        default="",
+    )
+
+    # Create a subcommand for "syncapi"
+    parser_syncapi = subparsers.add_parser(
+        "syncapi",
+        help="sync HPC_DME_APIs with upstream and generate a fresh token",
+    )
+    parser_syncapi.add_argument(
+        "--repo",
+        type=str,
+        help="optional path to HPC_DME_APIs repository (overrides env/fallback)",
+        required=False,
+        default="",
     )
 
     # Create a subcommand for "createmetadata"
@@ -92,11 +120,32 @@ def main():
         default="Analysis" # or Rawdata
     )
 
+    # Support "parkit <subcommand> --version" for all subcommands.
+    subcommand_parsers = [
+        parser_createtar,
+        parser_tarprep,
+        parser_checkapisync,
+        parser_syncapi,
+        parser_createmetadata,
+        parser_createemptycollection,
+        parser_deposittar,
+    ]
+    for subparser in subcommand_parsers:
+        subparser.add_argument("-v", "--version", action="version", version=__version__)
+
     # Parse the arguments
     args = parser.parse_args()
     files_created = list()
 
-    subcommands = ["createtar", "createmetadata", "createemptycollection", "deposittar"]
+    subcommands = [
+        "createtar",
+        "tarprep",
+        "createmetadata",
+        "createemptycollection",
+        "deposittar",
+        "checkapisync",
+        "syncapi",
+    ]
     if not args.command in subcommands:
         parser.print_help()
     elif args.command == "createtar":
@@ -114,6 +163,10 @@ def main():
         files_created.append(filelist_json_path)
     elif args.command == "deposittar":
         files_deposited = deposittocollection(args.tarball, args.dest, args.collectiontype)
+    elif args.command == "checkapisync":
+        check_hpc_dme_apis_sync(args.repo)
+    elif args.command == "syncapi":
+        syncapi(args.repo)
     for f in files_created:
         print(f"createmetadata: {f} file was created!")
 
