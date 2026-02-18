@@ -1,16 +1,16 @@
 # Project Information
-site_name: CCBR How Tos
-site_author: Vishal Koparde, Ph.D.
+site_name: parkit Documentation
+site_author: CCBR
 site_description: >-
-  The **DEVIL** is in the **DETAILS**. Step-by-step detailed How To Guides for data management and other CCBR-relevant tasks.
+  Versioned documentation for parkit and projark project archival workflows on HPC-DME.
 
 # Repository
-repo_name: CCBR/HowTos
-repo_url: https://github.com/CCBR/HowTos
-edit_uri: https://github.com/CCBR/HowTos/edit/main/docs/
+repo_name: CCBR/parkit
+repo_url: https://github.com/CCBR/parkit
+edit_uri: https://github.com/CCBR/parkit/edit/main/docs/
 
 # Copyright
-copyright: Copyright &copy; 2022 CCBR
+copyright: Copyright &copy; 2026 CCBR
 
 # Configuration
 theme:
@@ -93,4 +93,23 @@ markdown_extensions:
 
 # Page Tree
 nav:
-  - Intro: index.md
+  - Home: index.md
+  - Getting Started: getting-started.md
+  - CLI Reference:
+      - parkit Overview: cli/parkit-overview.md
+      - parkit checkapisync: cli/parkit-checkapisync.md
+      - parkit syncapi: cli/parkit-syncapi.md
+      - projark Overview: cli/projark-overview.md
+      - projark deposit: cli/projark-deposit.md
+      - projark retrieve: cli/projark-retrieve.md
+  - Workflows:
+      - projark Deposit (Recommended): workflows/projark-deposit-workflow.md
+      - projark Retrieve Selected Files: workflows/projark-retrieve-selected.md
+      - projark Retrieve Full Collection: workflows/projark-retrieve-full.md
+      - Classic parkit Manual Flow (Legacy): workflows/classic-parkit-manual.md
+  - Operational Guidance: operations.md
+  - Troubleshooting: troubleshooting.md
+  - Release Notes:
+      - v3.0.0: release-notes/v3.0.0.md
+  - Legacy:
+      - Archived Bash projark: legacy.md
