@@ -49,10 +49,10 @@ def main():
         required=True,
     )
     parser_createmetadata.add_argument(
-        "--collectiontype", 
-        type=str, 
-        help="type of collection ... Analysis[default] or Rawdata", 
-        default="Analysis" # or Rawdata
+        "--collectiontype",
+        type=str,
+        help="type of collection ... Analysis[default] or Rawdata",
+        default="Analysis",  # or Rawdata
     )
 
     # Create a subcommand for "createemptycollection"
@@ -86,10 +86,10 @@ def main():
         required=True,
     )
     parser_deposittar.add_argument(
-        "--collectiontype", 
-        type=str, 
-        help="type of collection ... Analysis[default] or Rawdata", 
-        default="Analysis" # or Rawdata
+        "--collectiontype",
+        type=str,
+        help="type of collection ... Analysis[default] or Rawdata",
+        default="Analysis",  # or Rawdata
     )
 
     # Parse the arguments
@@ -97,7 +97,7 @@ def main():
     files_created = list()
 
     subcommands = ["createtar", "createmetadata", "createemptycollection", "deposittar"]
-    if not args.command in subcommands:
+    if args.command not in subcommands:
         parser.print_help()
     elif args.command == "createtar":
         files_created = createtar(args.folder, args.outfile)
@@ -110,10 +110,14 @@ def main():
     elif args.command == "createmetadata":
         tar_json_path = createmetadata(args.tarball, args.dest, args.collectiontype)
         files_created.append(tar_json_path)
-        filelist_json_path = createmetadata(args.tarball + ".filelist", args.dest, args.collectiontype)
+        filelist_json_path = createmetadata(
+            args.tarball + ".filelist", args.dest, args.collectiontype
+        )
         files_created.append(filelist_json_path)
     elif args.command == "deposittar":
-        files_deposited = deposittocollection(args.tarball, args.dest, args.collectiontype)
+        files_deposited = deposittocollection(
+            args.tarball, args.dest, args.collectiontype
+        )
     for f in files_created:
         print(f"createmetadata: {f} file was created!")
 
