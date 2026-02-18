@@ -25,7 +25,7 @@ dependencies = ["pandas"]
 
 [project.optional-dependencies]
 dev = [
-    "black >= 22.0.0",
+    "ruff",
     "pre-commit"
 ]
 test = [
