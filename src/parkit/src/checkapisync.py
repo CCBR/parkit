@@ -71,7 +71,9 @@ def check_hpc_dme_apis_sync(repo_override=""):
     # This commonly happens when local pulls create merge commits like:
     # "Merge branch 'master' of https://github.com/CBIIT/HPC_DME_APIs".
     if rc_local_tree == 0 and rc_remote_tree == 0 and local_tree == remote_tree:
-        print("IN SYNC: local history differs, but repository content matches upstream.")
+        print(
+            "IN SYNC: local history differs, but repository content matches upstream."
+        )
         return 0
 
     if rc_base != 0:

@@ -97,7 +97,6 @@ unset __mamba_setup
 # <<< mamba initialize <<<
 ```
 
-
 ### Usage:
 
 ```bash
@@ -163,6 +162,7 @@ Sync local `HPC_DME_APIs` and generate a fresh API token.
 You can also use this command just to generate/refresh a new token (even if git is already up to date).
 
 What it does:
+
 - resolves `HPC_DME_APIs` repo path
 - runs `git pull`
 - runs `source <repo>/functions && dm_generate_token`
@@ -211,6 +211,7 @@ syncapi failed: dm_generate_token was not successful.
 ```
 
 What this means:
+
 - `git pull` succeeded (your local API repo updated).
 - Token generation failed at authentication time (`LDAP authentication failed`).
 - You are synced to latest code, but not ready for data operations until token generation succeeds.
@@ -221,7 +222,7 @@ What this means:
 - Say you want to archive `/data/CCBR/projects/CCBR-12345` folder to `/CCBR_Archive/GRIDFTP/Project_CCBR-12345` collection on HPC-DME
 - you can run the following commands sequentially to do this:
 
-```bash
+````bash
 # create the tarball
 parkit createtar --folder /data/CCBR/projects/ccbr_12345
 # the above command will creates the following files:
@@ -261,7 +262,7 @@ rm -f /data/CCBR/projects/ccbr_12345.tar*
 # test results with
 dm_get_collection /CCBR_Archive/GRIDFTP/Project_CCBR-12345
 # Done!
-```
+````
 
 Output from `ls /data/CCBR/projects/ccbr_12345.tar*`:
 
@@ -341,4 +342,3 @@ options:
                         what should be the value of env var HPC_DM_UTILS
   --version             print version
 ```
-

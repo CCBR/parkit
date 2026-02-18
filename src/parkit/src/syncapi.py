@@ -28,7 +28,9 @@ def syncapi(repo_override=""):
     print("syncapi: starting HPC_DME_APIs sync and token refresh")
     repo = _resolve_repo_path(repo_override=repo_override)
     if repo is None:
-        print("syncapi failed: HPC_DME_APIs is not set and no fallback repo path was found.")
+        print(
+            "syncapi failed: HPC_DME_APIs is not set and no fallback repo path was found."
+        )
         print(
             "syncapi hint: set HPC_DME_APIs to your repo path, "
             "or set HPC_DM_UTILS to <HPC_DME_APIs>/utils."
@@ -44,7 +46,9 @@ def syncapi(repo_override=""):
     pull_proc = subprocess.run(["git", "-C", str(repo), "pull"])
     if pull_proc.returncode != 0:
         print("syncapi failed: git pull did not succeed.")
-        print("syncapi hint: resolve git conflicts or fix remote/authentication issues, then retry.")
+        print(
+            "syncapi hint: resolve git conflicts or fix remote/authentication issues, then retry."
+        )
         return 1
 
     print("syncapi: [2/3] locating HPC_DME_APIs functions file ...")

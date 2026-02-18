@@ -146,7 +146,7 @@ def main():
         "checkapisync",
         "syncapi",
     ]
-    if not args.command in subcommands:
+    if args.command not in subcommands:
         parser.print_help()
     elif args.command == "createtar":
         files_created = createtar(args.folder, args.outfile)
@@ -164,7 +164,9 @@ def main():
         )
         files_created.append(filelist_json_path)
     elif args.command == "deposittar":
-        files_deposited = deposittocollection(args.tarball, args.dest, args.collectiontype)
+        files_deposited = deposittocollection(
+            args.tarball, args.dest, args.collectiontype
+        )
     elif args.command == "checkapisync":
         check_hpc_dme_apis_sync(args.repo)
     elif args.command == "syncapi":
