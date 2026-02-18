@@ -1,40 +1,50 @@
-# [build-system]
-# requires = ["hatchling"]
-# build-backend = "hatchling-build"
-
 [build-system]
-requires = ["setuptools>=61.0", "wheel", "setuptools-scm"]
-build-backend = "setuptools.build_meta"
+requires = [
+    "setuptools >= 62.3.0",
+    "wheel >= 0.29.0"
+]
+build-backend = 'setuptools.build_meta'
 
 [project]
 name = "parkit"
 dynamic = ['version','readme']
-description = "Parkit"
+description = "parkit: Park an archived project toolkit"
 authors = [
-    { name="kopardev", email="vishal.koparde@nih.gov" },
+    { name="Vishal Koparde", email="vishal.koparde@nih.gov" },
+    { name="Kelly Sovacool", email="kelly.sovacool@nih.gov" }
+]
+maintainers = [
+    {name = "CCR Collaborative Bioinformatics Resource", email = "CCBR_Pipeliner@mail.nih.gov"},
 ]
 license = {file = "LICENSE.md"}
+classifiers = [
+     "Programming Language :: Python :: 3",
+     "License :: OSI Approved :: MIT License",
+     "Operating System :: OS Independent",
+]
+
 requires-python = ">=3.11"
-# keywords = []
-# classifiers = [
-#     "Programming Language :: Python :: 3",
-#     "License :: OSI Approved :: MIT License",
-#     "Operating System :: OS Independent",
-# ]
 dependencies = ["pandas"]
 
 [project.optional-dependencies]
 dev = [
-    "black >= 22.0.0",
+    "ruff",
     "pre-commit"
 ]
 test = [
-    "pytest"
+    "pytest",
+    "pytest-cov"
 ]
 
-# [project.urls]
-# Homepage = "https://github.com/pypa/sampleproject"
-# Issues = "https://github.com/pypa/sampleproject/issues"
+[project.urls]
+Repository = "https://github.com/CCBR/parkit"
+
+[tool.setuptools.package-data]
+"*" = ["LICENSE.md", "VERSION", "CITATION.cff", "CHANGELOG.md", "pyproject.toml"]
+
+[tool.setuptools.dynamic]
+version = {file = "src/parkit/src/VERSION"}
+readme = {file = "README.md"}
 
 [project.scripts]
 parkit = "parkit.__main__:main"
@@ -42,7 +52,3 @@ parkit_folder2hpcdme = "parkit.parkit_folder2hpcdme:main"
 parkit_tarball2hpcdme = "parkit.parkit_tarball2hpcdme:main"
 projark = "parkit.projark:main"
 update_collection_metadata = "parkit.update_collection_metadata:main"
-
-[tool.setuptools.dynamic]
-version = {file = "src/parkit/src/VERSION"}
-readme = {file = "README.md"}
