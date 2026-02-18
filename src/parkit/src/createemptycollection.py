@@ -63,8 +63,6 @@ def createemptycollection(collectionpath, projectdesc="", projecttitle=""):
         ]
     }
 
-
-
     emptyanalysis_str = json.dumps(emptyanalysis)
     emptyanalysis_str = emptyanalysis_str.replace("DATE", formatted_date)
     new_emptyanalysis = json.loads(emptyanalysis_str)
