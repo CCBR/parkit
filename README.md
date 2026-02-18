@@ -2,6 +2,8 @@
 
 **Park** an **arc**hived project tool**kit**!
 
+[![build](https://github.com/CCBR/parkit/actions/workflows/build-python.yml/badge.svg)](https://github.com/CCBR/parkit/actions/workflows/build-python.yml)
+
 > DISCLAIMERS:
 >
 > - works only on [BIOWULF](https://hpc.nih.gov/) or HELIX
