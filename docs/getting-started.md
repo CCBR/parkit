@@ -60,7 +60,7 @@ parkit syncapi
 
 ## Session Safety
 
-Run all operations inside `tmux` or `screen`:
+Run all operations inside `tmux`, `screen`, or an Open OnDemand graphical session:
 
 ```bash
 tmux new -s parkit
@@ -69,3 +69,4 @@ screen -S parkit
 ```
 
 `projark deposit` and `projark retrieve` enforce this check.
+Disclaimer: Open OnDemand is currently available only on Biowulf compute nodes, not directly on Helix. Since `projark` is Helix-only today, use `tmux`/`screen` on Helix; Open OnDemand support is future-facing until Helix access is available.
