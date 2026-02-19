@@ -1,12 +1,26 @@
 name: docs
 on:
   workflow_dispatch:
+    inputs:
+      version:
+        description: "Docs version to deploy (example: v3.0.1)"
+        required: false
+      alias:
+        description: "Optional alias to update (example: latest)"
+        required: false
+        default: "latest"
+      ref:
+        description: "Git ref to build from (branch, tag, or SHA)"
+        required: false
   push:
     branches:
       - main
       - master
     paths:
       - .github/workflows/docs.yml
+      - mkdocs.yaml
+      - VERSION
+      - README.md
       - "docs/**"
 
 permissions:
@@ -17,10 +31,32 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
-      - uses: actions/setup-python@v2
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: ${{ github.event.inputs.ref || github.ref }}
+      - uses: actions/setup-python@v5
         with:
           python-version: 3.11
       - run: pip install --upgrade pip
-      - run: pip install -r docs/requirements.txt
-      - run: mkdocs gh-deploy --force
+      - run: pip install mkdocs mkdocs-material mike mkdocs-git-revision-date-plugin mkdocs-minify-plugin
+      - name: Resolve docs version
+        run: |
+          if [ -n "${{ github.event.inputs.version }}" ]; then
+            v="${{ github.event.inputs.version }}"
+          else
+            v="v$(cat VERSION)"
+          fi
+          echo "DOCS_VERSION=$v" >> "$GITHUB_ENV"
+      - name: Deploy versioned docs
+        run: |
+          if [ -n "${{ github.event.inputs.alias }}" ]; then
+            mike deploy --push --update-aliases "$DOCS_VERSION" "${{ github.event.inputs.alias }}"
+          else
+            mike deploy --push "$DOCS_VERSION"
+          fi
+      - name: Set default docs version
+        run: |
+          if [ -n "${{ github.event.inputs.alias }}" ]; then
+            mike set-default --push "${{ github.event.inputs.alias }}"
+          fi
