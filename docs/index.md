@@ -4,7 +4,7 @@
 
 For most users, the recommended interface is `projark`, which provides guided `deposit` and `retrieve` workflows for entire CCBR project folder(s).
 
-## In This Version (`v3.0.0`)
+## In This Version (`v3.0.0-dev`)
 
 - New Python-native `projark` command with structured subcommands.
 - `projark deposit` for project archival with sync/host/session preflight checks.
@@ -33,4 +33,4 @@ projark retrieve --help
 - Disclaimer: Open OnDemand is currently available only on Biowulf compute nodes, not directly on Helix. Since `projark` is Helix-only today, use `tmux`/`screen` on Helix; Open OnDemand support is future-facing until Helix access is available.
 - `projark` logs include ISO 8601 timestamps.
 - `projark` sends completion/failure email to `$USER@nih.gov` from `NCICCBR@mail.nih.gov`.
-- Docs are versioned; this set describes `v3.0.0` behavior.
+- Docs are versioned; this set describes `v3.0.0-dev` behavior.
