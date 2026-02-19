@@ -40,6 +40,10 @@ jobs:
           python-version: 3.11
       - run: pip install --upgrade pip
       - run: pip install mkdocs mkdocs-material mike mkdocs-git-revision-date-plugin mkdocs-minify-plugin
+      - name: Configure git identity for mike
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
       - name: Resolve docs version
         run: |
           if [ -n "${{ github.event.inputs.version }}" ]; then
