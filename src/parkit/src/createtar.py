@@ -1,5 +1,6 @@
 from parkit.src.utils import *
 from pathlib import Path
+import shlex
 
 
 def createtar(folder, outfile):
@@ -32,7 +33,10 @@ def createtar(folder, outfile):
 
     # example
     # tar cvf ccbr913.tar ccbr913 ccbr913P2 > ccbr913.tar.filelist
-    cmd = f"tar cvf {outfile} {folder} > {outfile}.filelist"
+    cmd = (
+        f"tar cvf {shlex.quote(outfile)} {shlex.quote(folder)} "
+        f"> {shlex.quote(f'{outfile}.filelist')}"
+    )
     run_cmd(cmd=cmd, errormsg="tar FAILED!")
 
     # calculate md5sum and write out to ".md5" files
@@ -52,10 +56,11 @@ def createtar(folder, outfile):
 def tarprep(tarfile):
     created_files = list()
     p = Path(tarfile)
+    filelist_path = f"{tarfile}.filelist"
     if p.suffix == ".gz":
-        cmd = f"tar tzvf {tarfile} > {tarfile}.filelist"
+        cmd = f"tar tzvf {shlex.quote(tarfile)} > {shlex.quote(filelist_path)}"
     elif p.suffix == ".tar":
-        cmd = f"tar tvf {tarfile} > {tarfile}.filelist"
+        cmd = f"tar tvf {shlex.quote(tarfile)} > {shlex.quote(filelist_path)}"
     else:
         errorout('tarfile extension should be ".gz" or ".tar"')
     run_cmd(cmd=cmd, errormsg="getting filelist from tar file failed!")

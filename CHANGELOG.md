@@ -5,7 +5,7 @@
 - Added `projark deposit` end-to-end archival flow with:
 - `checkapisync` preflight gate
 - Helix host enforcement
-- `tmux`/`screen` session enforcement
+- `tmux`/`screen`/Open OnDemand graphical session enforcement
 - project/datatype normalization
 - scratch staging, tar/filelist generation, md5 generation
 - transfer via `dm_register_directory`
@@ -30,8 +30,23 @@
 - initialize mamba only if not already in `PATH`
 - reference HPC_DME setup guide
 - document minimum Java requirement: `HPC_DM_JAVA_VERSION >= 23`
-- standardize guidance to run all operations in `tmux`/`screen`
+- standardize guidance to run all operations in resilient sessions (`tmux`/`screen`; now also Open OnDemand graphical sessions)
 - Documentation: Improved code example readability in README. (#34, @kelly-sovacool)
+- Added short options for `projark` subcommands:
+- common: `-f` (`--folder`), `-p` (`--projectnumber`), `-d` (`--datatype`)
+- deposit: `-t` (`--tarname`), `-s` (`--split-size-gb`), `-k` (`--no-cleanup`)
+- retrieve: `-n` (`--filenames`), `-u` (`--unsplit`/`--unspilt`)
+- Updated `projectnumber` normalization:
+- remove repeated leading `ccbr`/`CCBR` prefixes (with optional `_`/`-`)
+- accept any non-empty remainder (for example `CCBR-abcd` -> `abcd`)
+- Added absolute-path normalization for `--folder` handling in `projark`:
+- relative paths are resolved to absolute paths before use
+- trailing slash/non-trailing slash inputs are both supported
+- Hardened tar command construction with shell-safe quoting for paths containing spaces/special characters.
+- Added ISO 8601 timestamps to `projark` log lines.
+- Added completion/failure email notifications for `projark`:
+- recipient: `$USER@nih.gov`
+- sender: `NCICCBR@mail.nih.gov`
 
 ## v2.2.0
 

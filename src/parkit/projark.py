@@ -1,4 +1,5 @@
 import argparse
+from datetime import datetime
 import json
 import os
 import re
@@ -17,6 +18,7 @@ from parkit.src.utils import get_md5sum, run_dm_cmd
 
 
 DEFAULT_SPLIT_SIZE_GB = 500.0
+NOTIFY_FROM_EMAIL = "NCICCBR@mail.nih.gov"
 
 
 def _human_size(num_bytes):
@@ -30,30 +32,143 @@ def _human_size(num_bytes):
 
 
 def _info(message):
-    print(f"[projark] ℹ️  {message}")
+    print(f"{_log_prefix()} ℹ️  {message}")
 
 
 def _step(step_number, message):
-    print(f"[projark] 🚀 Step {step_number}: {message}")
+    print(f"{_log_prefix()} 🚀 Step {step_number}: {message}")
 
 
 def _ok(message):
-    print(f"[projark] ✅ {message}")
+    print(f"{_log_prefix()} ✅ {message}")
 
 
 def _error(message):
-    print(f"[projark] ❌ ERROR: {message}")
+    print(f"{_log_prefix()} ❌ ERROR: {message}")
     return 1
+
+
+def _log_prefix():
+    timestamp = datetime.now().astimezone().isoformat(timespec="seconds")
+    return f"[projark {timestamp}]"
+
+
+def _duration_hms(start_time, end_time):
+    total_seconds = max(0, int((end_time - start_time).total_seconds()))
+    hours, remainder = divmod(total_seconds, 3600)
+    minutes, seconds = divmod(remainder, 60)
+    return f"{hours:02d}:{minutes:02d}:{seconds:02d}"
+
+
+def _resolved_path_for_report(raw_path):
+    if not raw_path:
+        return ""
+    try:
+        return str(Path(raw_path).expanduser().resolve())
+    except OSError:
+        return raw_path
+
+
+def _send_notification_email(
+    args, status, return_code, start_time, end_time, error_message=""
+):
+    user = os.environ.get("USER", "").strip()
+    if not user:
+        _info("Email notification skipped: USER environment variable is not set.")
+        return
+
+    to_email = f"{user}@nih.gov"
+    command = getattr(args, "command", "unknown")
+    projectnumber = getattr(args, "projectnumber", "")
+    datatype = getattr(args, "datatype", "")
+    folder = _resolved_path_for_report(getattr(args, "folder", ""))
+    host = socket.getfqdn() or os.environ.get("HOSTNAME", "unknown")
+    project_label = _project_tag(projectnumber) if projectnumber else "N/A"
+    datatype_label = datatype if datatype else "N/A"
+    duration = _duration_hms(start_time, end_time)
+
+    subject = f"[projark] {status} {command} {project_label} ({datatype_label})"
+    body_lines = [
+        f"Status: {status}",
+        f"Command: projark {command}",
+        f"Project: {projectnumber or 'N/A'}",
+        f"Datatype: {datatype_label}",
+        f"User: {user}",
+        f"Host: {host}",
+        f"Folder: {folder or 'N/A'}",
+        f"Start: {start_time.isoformat(timespec='seconds')}",
+        f"End: {end_time.isoformat(timespec='seconds')}",
+        f"Duration: {duration}",
+        f"Return code: {return_code}",
+    ]
+    if error_message:
+        body_lines.append(f"Error: {error_message}")
+    body = "\n".join(body_lines) + "\n"
+
+    _info(
+        f"Sending completion email to {to_email} from {NOTIFY_FROM_EMAIL} (status: {status}) ..."
+    )
+
+    mailx = shutil.which("mailx")
+    if mailx:
+        proc = subprocess.run(
+            [mailx, "-r", NOTIFY_FROM_EMAIL, "-s", subject, to_email],
+            input=body,
+            text=True,
+            capture_output=True,
+            check=False,
+        )
+        if proc.returncode == 0:
+            _ok("Email notification sent via mailx.")
+            return
+        err = (proc.stderr or proc.stdout or "").strip()
+        print(
+            f"{_log_prefix()} ❌ Email notification failed via mailx "
+            f"(exit {proc.returncode}): {err or 'no error output'}"
+        )
+
+    sendmail = shutil.which("sendmail")
+    if sendmail:
+        message = (
+            f"From: {NOTIFY_FROM_EMAIL}\n"
+            f"To: {to_email}\n"
+            f"Subject: {subject}\n\n"
+            f"{body}"
+        )
+        proc = subprocess.run(
+            [sendmail, "-f", NOTIFY_FROM_EMAIL, "-t"],
+            input=message,
+            text=True,
+            capture_output=True,
+            check=False,
+        )
+        if proc.returncode == 0:
+            _ok("Email notification sent via sendmail.")
+            return
+        err = (proc.stderr or proc.stdout or "").strip()
+        print(
+            f"{_log_prefix()} ❌ Email notification failed via sendmail "
+            f"(exit {proc.returncode}): {err or 'no error output'}"
+        )
+
+    if not mailx and not sendmail:
+        print(
+            f"{_log_prefix()} ❌ Email notification failed: neither 'mailx' nor "
+            "'sendmail' is available on this host."
+        )
 
 
 def _normalize_project_number(raw_value):
     value = raw_value.strip()
-    match = re.fullmatch(r"(?i)(?:ccbr[-_]?)?(\d+)", value)
-    if not match:
+    # Allow repeated leading CCBR prefixes, each optionally followed by '-' or '_'.
+    # After stripping those prefixes, accept any non-empty project number.
+    normalized = re.sub(r"(?i)^(?:(?:ccbr)(?:[-_]?))+", "", value).strip()
+    if not normalized:
         raise argparse.ArgumentTypeError(
-            "Invalid --projectnumber. Accepts values like 1234, ccbr1234, CCBR-1234, ccbr_1234."
+            "Invalid --projectnumber. Provide a non-empty value after optional leading "
+            "CCBR prefixes (e.g. 1234, abcd, ccbr1234, CCBR-abcd, ccbr_ccbr-1234abc)."
         )
-    return match.group(1)
+    return normalized
 
 
 def _normalize_datatype(raw_value):
@@ -75,6 +190,25 @@ def _project_collection_path(project_number):
 
 def _default_tarname(project_number):
     return f"ccbr{project_number}.tar"
+
+
+def _resolve_existing_directory(raw_path, arg_name="--folder"):
+    try:
+        resolved = Path(raw_path).expanduser().resolve(strict=True)
+    except FileNotFoundError:
+        raise RuntimeError(f"{arg_name} path does not exist: {raw_path}")
+    except OSError as exc:
+        raise RuntimeError(f"Failed to resolve {arg_name} path '{raw_path}': {exc}")
+    if not resolved.is_dir():
+        raise RuntimeError(f"{arg_name} must point to a directory: {resolved}")
+    return resolved
+
+
+def _resolve_output_directory(raw_path):
+    try:
+        return Path(raw_path).expanduser().resolve()
+    except OSError as exc:
+        raise RuntimeError(f"Failed to resolve --folder path '{raw_path}': {exc}")
 
 
 def _run_sync_gate():
@@ -104,10 +238,19 @@ def _require_terminal_multiplexer():
     # TMUX is set inside tmux; STY is set inside GNU screen.
     in_tmux = bool(os.environ.get("TMUX"))
     in_screen = bool(os.environ.get("STY"))
-    if not (in_tmux or in_screen):
+    # Open OnDemand desktop shells usually expose one or more OOD variables and
+    # a graphical session/display marker.
+    ood_env_markers = ("OOD_PORTAL", "OOD_JOBID", "OOD_SESSION_ID", "OOD_HOST")
+    has_ood_marker = any(os.environ.get(marker) for marker in ood_env_markers)
+    xdg_session_type = os.environ.get("XDG_SESSION_TYPE", "").lower()
+    has_graphical_session = xdg_session_type in {"x11", "wayland"}
+    has_display = bool(os.environ.get("DISPLAY") or os.environ.get("WAYLAND_DISPLAY"))
+    in_ood_graphical_session = has_ood_marker and (has_graphical_session or has_display)
+
+    if not (in_tmux or in_screen or in_ood_graphical_session):
         raise RuntimeError(
-            "projark deposit must be run inside tmux or screen because transfers may take a long time. "
-            "Please start a tmux/screen session and rerun."
+            "projark must be run inside tmux, screen, or an Open OnDemand graphical session "
+            "because transfers may take a long time. Please start one of these session types and rerun."
         )
 
 
@@ -246,10 +389,13 @@ def _run_deposit(args):
     _step(2, "verifying execution host ...")
     _require_helix()
     _ok("Host check passed (helix.nih.gov).")
-    _info("Checking for tmux/screen session for long-running deposit ...")
+    _info(
+        "Checking for tmux/screen/Open OnDemand graphical session for long-running deposit ..."
+    )
     _require_terminal_multiplexer()
-    _ok("Session check passed (inside tmux/screen).")
+    _ok("Session check passed (inside tmux/screen/Open OnDemand graphical session).")
 
+    source_folder = _resolve_existing_directory(args.folder)
     project_tag = _project_tag(args.projectnumber)
     base_collection = _project_collection_path(args.projectnumber)
     datatype = args.datatype
@@ -262,9 +408,9 @@ def _run_deposit(args):
         return _error("--tarname must be a file name, not a path.")
     tar_path = datatype_dir / tarname
 
-    _step(5, f"creating tarball from folder: {args.folder}")
+    _step(5, f"creating tarball from folder: {source_folder}")
     _info(f"Tar output path: {tar_path}")
-    createtar(args.folder, str(tar_path))
+    createtar(str(source_folder), str(tar_path))
     _ok(f"Created: {tar_path}")
     _ok(f"Created: {tar_path}.filelist")
 
@@ -349,9 +495,11 @@ def _run_retrieve(args):
     _step(2, "verifying execution host ...")
     _require_helix()
     _ok("Host check passed (helix.nih.gov).")
-    _info("Checking for tmux/screen session for long-running retrieve ...")
+    _info(
+        "Checking for tmux/screen/Open OnDemand graphical session for long-running retrieve ..."
+    )
     _require_terminal_multiplexer()
-    _ok("Session check passed (inside tmux/screen).")
+    _ok("Session check passed (inside tmux/screen/Open OnDemand graphical session).")
 
     base_collection = _project_collection_path(args.projectnumber)
     datatype = args.datatype
@@ -362,9 +510,10 @@ def _run_retrieve(args):
     if not user:
         return _error("USER environment variable is not set.")
 
-    base_local = (
-        Path(args.folder) if args.folder else Path("/scratch") / user / project_tag
-    )
+    if args.folder:
+        base_local = _resolve_output_directory(args.folder)
+    else:
+        base_local = (Path("/scratch") / user / project_tag).resolve()
     target_dir = base_local / datatype
     target_dir.mkdir(parents=True, exist_ok=True)
     _step(4, f"local download directory: {target_dir}")
@@ -435,26 +584,32 @@ def _build_parser():
         action="version",
         version=f"projark is part of parkit; parkit version: {__version__}",
     )
-    parser_deposit.add_argument("--folder", required=True, help="Folder to archive")
     parser_deposit.add_argument(
+        "-f", "--folder", required=True, help="Folder to archive"
+    )
+    parser_deposit.add_argument(
+        "-p",
         "--projectnumber",
         "--project-number",
         type=_normalize_project_number,
         required=True,
-        help="Project number (e.g. 1234, ccbr1234, CCBR-1234, ccbr_1234)",
+        help="Project number (e.g. 1234, abcd, ccbr1234, CCBR-abcd)",
     )
     parser_deposit.add_argument(
+        "-d",
         "--datatype",
         type=_normalize_datatype,
         default="Analysis",
         help="Analysis or Rawdata (case-insensitive). Default: Analysis",
     )
     parser_deposit.add_argument(
+        "-t",
         "--tarname",
         default="",
         help="Optional tar file name override (default: ccbr<projectnumber>.tar)",
     )
     parser_deposit.add_argument(
+        "-s",
         "--split-size-gb",
         type=float,
         default=DEFAULT_SPLIT_SIZE_GB,
@@ -467,6 +622,7 @@ def _build_parser():
         help="Delete /scratch/$USER/CCBR-<projectnumber> after successful transfer (default: enabled)",
     )
     parser_deposit.add_argument(
+        "-k",
         "--no-cleanup",
         dest="cleanup",
         action="store_false",
@@ -484,30 +640,35 @@ def _build_parser():
         version=f"projark is part of parkit; parkit version: {__version__}",
     )
     parser_retrieve.add_argument(
+        "-f",
         "--folder",
         default="",
         help="Local base folder (default: /scratch/$USER/CCBR-<projectnumber>)",
     )
     parser_retrieve.add_argument(
+        "-p",
         "--projectnumber",
         "--project-number",
         type=_normalize_project_number,
         required=True,
-        help="Project number (e.g. 1234, ccbr1234, CCBR-1234, ccbr_1234)",
+        help="Project number (e.g. 1234, abcd, ccbr1234, CCBR-abcd)",
     )
     parser_retrieve.add_argument(
+        "-d",
         "--datatype",
         type=_normalize_datatype,
         default="Analysis",
         help="Analysis or Rawdata (case-insensitive). Default: Analysis",
     )
     parser_retrieve.add_argument(
+        "-n",
         "--filenames",
         required=False,
         default="",
         help="Comma-separated file names to retrieve (omit to download full collection)",
     )
     parser_retrieve.add_argument(
+        "-u",
         "--unspilt",
         "--unsplit",
         action="store_true",
@@ -520,6 +681,9 @@ def _build_parser():
 def main():
     parser = _build_parser()
     args = parser.parse_args()
+    start_time = datetime.now().astimezone()
+    return_code = 1
+    error_message = ""
 
     try:
         if args.command == "deposit":
@@ -532,8 +696,21 @@ def main():
     except KeyboardInterrupt:
         _info("Interrupted by user.")
         return_code = 130
+        error_message = "Interrupted by user."
     except Exception as exc:
-        return_code = _error(str(exc))
+        error_message = str(exc)
+        return_code = _error(error_message)
+
+    end_time = datetime.now().astimezone()
+    status = "SUCCESS" if return_code == 0 else "FAILED"
+    _send_notification_email(
+        args=args,
+        status=status,
+        return_code=return_code,
+        start_time=start_time,
+        end_time=end_time,
+        error_message=error_message,
+    )
 
     sys.exit(return_code)
 

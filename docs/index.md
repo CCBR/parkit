@@ -29,5 +29,8 @@ projark retrieve --help
 ## Notes
 
 - `projark` is intended for Helix (`helix.nih.gov`).
-- All runs should be executed in `tmux` or `screen`.
+- All runs should be executed in `tmux`, `screen`, or an Open OnDemand graphical session.
+- Disclaimer: Open OnDemand is currently available only on Biowulf compute nodes, not directly on Helix. Since `projark` is Helix-only today, use `tmux`/`screen` on Helix; Open OnDemand support is future-facing until Helix access is available.
+- `projark` logs include ISO 8601 timestamps.
+- `projark` sends completion/failure email to `$USER@nih.gov` from `NCICCBR@mail.nih.gov`.
 - Docs are versioned; this set describes `v3.0.0` behavior.
