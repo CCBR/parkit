@@ -33,8 +33,8 @@ theme:
       toggle:
         icon: material/toggle-switch
         name: Switch to light mode
-  logo: assets/images/doc-book.svg
-  favicon: assets/images/favicon.png
+  logo: assets/images/parkit_favicon.jpg
+  favicon: assets/images/parkit_favicon.jpg
 
 # Plugins
 plugins:
@@ -72,8 +72,8 @@ markdown_extensions:
   - pymdownx.critic
   - pymdownx.details
   - pymdownx.emoji:
-      emoji_index: !!python/name:materialx.emoji.twemoji
-      emoji_generator: !!python/name:materialx.emoji.to_svg
+      emoji_index: !!python/name:material.extensions.emoji.twemoji
+      emoji_generator: !!python/name:material.extensions.emoji.to_svg
   - pymdownx.highlight
   - pymdownx.inlinehilite
   - pymdownx.keys
@@ -110,6 +110,7 @@ nav:
   - Operational Guidance: operations.md
   - Troubleshooting: troubleshooting.md
   - Release Notes:
-      - v3.0.0-dev: release-notes/v3.0.0-dev.md
+      - v3.0.1: release-notes/v3.0.1.md
+      - v3.0.0: release-notes/v3.0.0.md
   - Legacy:
       - Archived Bash projark: legacy.md
