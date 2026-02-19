@@ -130,10 +130,7 @@ def _send_notification_email(
     sendmail = shutil.which("sendmail")
     if sendmail:
         message = (
-            f"From: {NOTIFY_FROM_EMAIL}\n"
-            f"To: {to_email}\n"
-            f"Subject: {subject}\n\n"
-            f"{body}"
+            f"From: {NOTIFY_FROM_EMAIL}\nTo: {to_email}\nSubject: {subject}\n\n{body}"
         )
         proc = subprocess.run(
             [sendmail, "-f", NOTIFY_FROM_EMAIL, "-t"],
