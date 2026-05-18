@@ -10,7 +10,9 @@ tmux new -s parkit
 screen -S parkit
 ```
 
+Open OnDemand graphical sessions are also accepted.
 `projark` enforces this for both `deposit` and `retrieve`.
+Disclaimer: Open OnDemand is currently available only on Biowulf compute nodes, not directly on Helix. Since `projark` is Helix-only today, use `tmux`/`screen` on Helix; Open OnDemand support is future-facing until Helix access is available.
 
 ## Scratch Paths
 
@@ -34,3 +36,9 @@ Default is `500` GB.
 
 - Default: cleanup enabled after successful deposit.
 - To retain artifacts: `--no-cleanup`.
+
+## Logging and Notifications
+
+- `projark` logs include ISO 8601 timestamps.
+- On completion/failure, `projark` sends email to `$USER@nih.gov`.
+- Notification sender is `NCICCBR@mail.nih.gov`.

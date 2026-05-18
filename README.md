@@ -40,10 +40,22 @@ Archive (`deposit`) example:
 projark deposit --folder /data/CCBR/projects/CCBR-12345 --projectnumber 12345 --datatype Analysis
 ```
 
+Archive (`deposit`) short-flag example:
+
+```bash
+projark deposit -f /data/CCBR/projects/CCBR-12345 -p CCBR-12345 -d Analysis -s 250 -k
+```
+
 Retrieve selected files example:
 
 ```bash
 projark retrieve --projectnumber 12345 --datatype Analysis --filenames new.tar_0001,new.tar_0002 --unsplit
+```
+
+Retrieve selected files short-flag example:
+
+```bash
+projark retrieve -p CCBR-12345 -d Analysis -n new.tar_0001,new.tar_0002 -u
 ```
 
 Retrieve full collection example (omit `--filenames`):
@@ -54,15 +66,41 @@ projark retrieve --projectnumber 12345 --datatype Analysis --unsplit
 
 Useful `deposit` flags:
 
+- `-f, --folder <path>`: input folder to archive.
+- `-p, --projectnumber <value>`: project identifier.
+- `-d, --datatype <Analysis|Rawdata>`: datatype (default `Analysis`).
 - `--tarname <name>.tar`: override default tar name.
-- `--split-size-gb <N>`: split threshold/chunk size (default `500` GB).
-- `--no-cleanup`: keep scratch artifacts after successful transfer.
+- `-t, --tarname <name>.tar`: override default tar name.
+- `-s, --split-size-gb <N>`: split threshold/chunk size (default `500` GB).
+- `-k, --no-cleanup`: keep scratch artifacts after successful transfer.
 
 Useful `retrieve` flags:
 
-- `--filenames a,b,c`: retrieve specific objects.
-- `--unsplit` (alias `--unspilt`): merge downloaded split tar parts.
-- `--folder /path`: override default local base (`/scratch/$USER/CCBR-<projectnumber>`).
+- `-f, --folder /path`: override default local base (`/scratch/$USER/CCBR-<projectnumber>`).
+- `-p, --projectnumber <value>`: project identifier.
+- `-d, --datatype <Analysis|Rawdata>`: datatype (default `Analysis`).
+- `-n, --filenames a,b,c`: retrieve specific objects.
+- `-u, --unsplit` (alias `--unspilt`): merge downloaded split tar parts.
+
+`--projectnumber` normalization:
+
+- Accepts any non-empty value.
+- Repeated leading prefixes `ccbr`, `CCBR`, `Ccbr` are removed (each may be followed by `_`, `-`, or nothing).
+- Examples:
+  - `CCBR-1234` -> `1234`
+  - `CCBR-abcd` -> `abcd`
+  - `ccbr_ccbr-1234abc` -> `1234abc`
+
+Path behavior:
+
+- `--folder FASTQ` and `--folder FASTQ/` are both accepted.
+- Relative `--folder` values are resolved to absolute paths before use.
+
+Runtime logging and notifications:
+
+- Log lines are timestamped in ISO 8601 format (for example `2026-02-19T14:37:52-05:00`).
+- Completion/failure email is sent to `$USER@nih.gov`.
+- Notification sender is `NCICCBR@mail.nih.gov`.
 
 ### Prerequisites:
 
@@ -78,7 +116,8 @@ mamba activate /vf/users/CCBR_Pipeliner/db/PipeDB/miniforge3/envs/parkit
 
 - **HPC_DM_JAVA_VERSION** minimum required value is `23` as of today.
 
-- Run all operations from a `tmux` or `screen` session.
+- Run all operations from `tmux`, `screen`, or an Open OnDemand graphical session.
+- Disclaimer: Open OnDemand is currently available only on Biowulf compute nodes, not directly on Helix. Since `projark` is Helix-only today, use `tmux`/`screen` on Helix; Open OnDemand support is future-facing until Helix access is available.
 
 - If `mamba` is not already in your `PATH`, add the following block to your `~/.bashrc` or `~/.zshrc`, then run `mamba activate /vf/users/CCBR_Pipeliner/db/PipeDB/miniforge3/envs/parkit`:
 
