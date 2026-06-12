@@ -315,9 +315,15 @@ def _ensure_deposit_collections(base_collection, datatype, project_number):
             {"attribute": "access", "value": "Open Access"},
             {"attribute": "organism", "value": "unknown"},
             {"attribute": "summary_of_samples", "value": "unknown"},
-            {"attribute": "project_start_date", "value": today, "dateFormat": "yyyyMMdd"},
+            {
+                "attribute": "project_start_date",
+                "value": today,
+                "dateFormat": "yyyyMMdd",
+            },
         ]
-        _register_collection(base_collection, "Project", extra_metadata=project_metadata)
+        _register_collection(
+            base_collection, "Project", extra_metadata=project_metadata
+        )
     else:
         _info("Project collection exists.")
 
@@ -331,7 +337,9 @@ def _ensure_deposit_collections(base_collection, datatype, project_number):
         {"attribute": "method", "value": "NGS"},
         {"attribute": "number_of_cases", "value": "unknown"},
     ]
-    _register_collection(datatype_collection, datatype_collection_type, extra_metadata=datatype_metadata)
+    _register_collection(
+        datatype_collection, datatype_collection_type, extra_metadata=datatype_metadata
+    )
     return datatype_collection
 
 
@@ -419,7 +427,9 @@ def _run_deposit(args):
     project_tag = _project_tag(args.projectnumber)
     base_collection = _project_collection_path(args.projectnumber)
     datatype = args.datatype
-    datatype_collection = _ensure_deposit_collections(base_collection, datatype, args.projectnumber)
+    datatype_collection = _ensure_deposit_collections(
+        base_collection, datatype, args.projectnumber
+    )
 
     scratch_root, datatype_dir = _prepare_scratch_dirs(project_tag, datatype)
 
