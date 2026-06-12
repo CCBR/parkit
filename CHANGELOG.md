@@ -1,5 +1,11 @@
 ## parkit development version
 
+- Fixed `projark deposit` HTTP 400 errors from HPC-DME when creating Project and Analysis/Rawdata collections (#53, @kopardev):
+  - `_register_collection` now accepts `extra_metadata` to send all required DME fields.
+  - Project collections are registered with: `project_title`, `project_description`, `origin`, `method`, `access`, `organism`, `summary_of_samples`, `project_start_date`.
+  - Analysis/Rawdata sub-collections are registered with: `project_start_date`, `method`, `number_of_cases`.
+  - `Rawdata` datatype is mapped to DME `collection_type` value `Analysis` (valid values: `Project`, `PI_Lab`, `Sample`, `Analysis`).
+
 ## v3.0.1
 
 - Added short options for `projark` subcommands (#45, @kopardev):

@@ -273,15 +273,17 @@ def _dataobject_exists(object_path):
     return proc.returncode == 0
 
 
-def _register_collection(collection_path, collection_type):
-    # Minimal metadata payload used to create a collection if it does not exist.
+def _register_collection(collection_path, collection_type, extra_metadata=None):
     payload = {
         "metadataEntries": [{"attribute": "collection_type", "value": collection_type}]
     }
+    if extra_metadata:
+        payload["metadataEntries"].extend(extra_metadata)
     with NamedTemporaryFile("w", suffix=".json", delete=False) as tmp:
         json.dump(payload, tmp, indent=2)
         temp_json = tmp.name
 
+    _info(f"Collection registration payload:\n{json.dumps(payload, indent=2)}")
     try:
         cmd = f"dm_register_collection {shlex.quote(temp_json)} {shlex.quote(collection_path)}"
         run_dm_cmd(
@@ -292,7 +294,7 @@ def _register_collection(collection_path, collection_type):
             os.remove(temp_json)
 
 
-def _ensure_deposit_collections(base_collection, datatype):
+def _ensure_deposit_collections(base_collection, datatype, project_number):
     datatype_collection = f"{base_collection}/{datatype}"
     _info(f"Step 3: verifying destination collection: {datatype_collection}")
     if _collection_exists(datatype_collection):
@@ -303,12 +305,33 @@ def _ensure_deposit_collections(base_collection, datatype):
     if not _collection_exists(base_collection):
         _info(f"Project collection missing: {base_collection}")
         _info("Creating project collection first ...")
-        _register_collection(base_collection, "Project")
+        project_label = f"CCBR-{project_number}"
+        today = datetime.now().strftime("%Y%m%d")
+        project_metadata = [
+            {"attribute": "project_title", "value": project_label},
+            {"attribute": "project_description", "value": project_label},
+            {"attribute": "origin", "value": "CCBR"},
+            {"attribute": "method", "value": "NGS"},
+            {"attribute": "access", "value": "Open Access"},
+            {"attribute": "organism", "value": "unknown"},
+            {"attribute": "summary_of_samples", "value": "unknown"},
+            {"attribute": "project_start_date", "value": today, "dateFormat": "yyyyMMdd"},
+        ]
+        _register_collection(base_collection, "Project", extra_metadata=project_metadata)
     else:
         _info("Project collection exists.")
 
     _info(f"Creating datatype collection: {datatype_collection}")
-    _register_collection(datatype_collection, datatype)
+    # DME valid collection_type values: [Project, PI_Lab, Sample, Analysis].
+    # "Rawdata" is not a valid type, so map it to "Analysis".
+    datatype_collection_type = "Analysis" if datatype == "Rawdata" else datatype
+    today = datetime.now().strftime("%Y%m%d")
+    datatype_metadata = [
+        {"attribute": "project_start_date", "value": today, "dateFormat": "yyyyMMdd"},
+        {"attribute": "method", "value": "NGS"},
+        {"attribute": "number_of_cases", "value": "unknown"},
+    ]
+    _register_collection(datatype_collection, datatype_collection_type, extra_metadata=datatype_metadata)
     return datatype_collection
 
 
@@ -396,7 +419,7 @@ def _run_deposit(args):
     project_tag = _project_tag(args.projectnumber)
     base_collection = _project_collection_path(args.projectnumber)
     datatype = args.datatype
-    datatype_collection = _ensure_deposit_collections(base_collection, datatype)
+    datatype_collection = _ensure_deposit_collections(base_collection, datatype, args.projectnumber)
 
     scratch_root, datatype_dir = _prepare_scratch_dirs(project_tag, datatype)
 
