@@ -7,6 +7,7 @@
   - `Rawdata` datatype is mapped to DME `collection_type` value `Analysis` (valid values: `Project`, `PI_Lab`, `Sample`, `Analysis`).
 - After Step 2 in `projark deposit`, print the active (non-comment) lines from `$HPC_DM_UTILS/hpcdme.properties` with a 4-space indent so users can verify their HPC-DME configuration before the transfer begins. (#56, @kopardev)
 - After Step 2 in `projark deposit`, check that proxy settings (`hpc.server.proxy.url`, `hpc.server.proxy.port`) are commented out in `hpcdme.properties`; abort with a descriptive error if any are active. Per HPC-DME team guidance (Udit Sehgal), proxy lines must not be set. (#57, @kopardev)
+- Exclude dot files (filenames starting with `.`) from `dm_register_directory` during deposit by passing a temp exclude file with patterns `.*` and `**/.*` via the `-e` flag. Prevents hidden files such as shell per-directory history files from being registered to HPC-DME. (#58, @kopardev)
 
 ## v3.0.1
 
