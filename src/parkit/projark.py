@@ -60,6 +60,21 @@ def _duration_hms(start_time, end_time):
     return f"{hours:02d}:{minutes:02d}:{seconds:02d}"
 
 
+def _print_hpcdme_properties():
+    hpc_dm_utils = os.environ.get("HPC_DM_UTILS", "")
+    props_path = Path(hpc_dm_utils) / "hpcdme.properties"
+    _info(f"HPC-DME configuration ({props_path}):")
+    try:
+        with open(props_path) as fh:
+            for line in fh:
+                stripped = line.rstrip("\n")
+                if stripped.startswith("#") or stripped.strip() == "":
+                    continue
+                print(f"    {stripped}")
+    except OSError as e:
+        _info(f"Could not read {props_path}: {e}")
+
+
 def _resolved_path_for_report(raw_path):
     if not raw_path:
         return ""
@@ -422,6 +437,7 @@ def _run_deposit(args):
     )
     _require_terminal_multiplexer()
     _ok("Session check passed (inside tmux/screen/Open OnDemand graphical session).")
+    _print_hpcdme_properties()
 
     source_folder = _resolve_existing_directory(args.folder)
     project_tag = _project_tag(args.projectnumber)
