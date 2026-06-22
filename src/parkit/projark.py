@@ -319,6 +319,61 @@ def _dataobject_exists(object_path):
     return proc.returncode == 0
 
 
+def _insert_counter(name, n):
+    """Insert _{n:03d} before the first '.' in name, or append if no '.' exists.
+
+    Examples:
+        ccbr1431.tar           -> ccbr1431_001.tar
+        ccbr1431.tar.filelist  -> ccbr1431_001.tar.filelist
+        ccbr1431.tar_0001      -> ccbr1431_001.tar_0001
+    """
+    dot = name.find(".")
+    if dot == -1:
+        return f"{name}_{n:03d}"
+    return f"{name[:dot]}_{n:03d}{name[dot:]}"
+
+
+def _resolve_name_conflicts(datatype_dir, datatype_collection):
+    """Rename all staged files when any would collide with an existing HPC-DME object.
+
+    Checks each non-dot, non-.md5 file against the destination collection. If any
+    conflict is found, locates the lowest counter N (001, 002, ...) for which none
+    of the candidate names exist in HPC-DME, then renames every file in the
+    staging directory (primary and .md5 alike) using _insert_counter.
+    """
+    all_files = sorted(
+        p for p in datatype_dir.iterdir() if not p.name.startswith(".")
+    )
+    non_md5 = [p for p in all_files if not p.name.endswith(".md5")]
+
+    conflicts = [p for p in non_md5 if _dataobject_exists(f"{datatype_collection}/{p.name}")]
+    if not conflicts:
+        _info("No file name conflicts found in HPC-DME destination collection.")
+        return
+
+    _info(
+        f"{len(conflicts)} file(s) already exist in HPC-DME: "
+        + ", ".join(repr(p.name) for p in conflicts)
+    )
+
+    counter = None
+    for n in range(1, 1000):
+        candidates = [_insert_counter(p.name, n) for p in non_md5]
+        if not any(_dataobject_exists(f"{datatype_collection}/{c}") for c in candidates):
+            counter = n
+            break
+    if counter is None:
+        raise RuntimeError(
+            f"Could not find a free counter for staged files in {datatype_collection} after 999 attempts."
+        )
+
+    _info(f"Renaming all staged files with counter _{counter:03d} to avoid collisions.")
+    for fpath in all_files:
+        new_name = _insert_counter(fpath.name, counter)
+        _info(f"  {fpath.name!r} -> {new_name!r}")
+        fpath.rename(fpath.parent / new_name)
+
+
 def _register_collection(collection_path, collection_type, extra_metadata=None):
     payload = {
         "metadataEntries": [{"attribute": "collection_type", "value": collection_type}]
@@ -495,6 +550,9 @@ def _run_deposit(args):
 
     _split_if_needed(tar_path, args.split_size_gb)
     _write_md5_files(datatype_dir)
+
+    _info("Checking for file name conflicts with existing HPC-DME collection objects ...")
+    _resolve_name_conflicts(datatype_dir, datatype_collection)
 
     _step(6, "transferring staged directory to HPC-DME ...")
     src_dir = f"{datatype_dir}/"
