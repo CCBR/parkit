@@ -499,8 +499,20 @@ def _run_deposit(args):
     _step(6, "transferring staged directory to HPC-DME ...")
     src_dir = f"{datatype_dir}/"
     dst_dir = f"{datatype_collection}/"
-    cmd = f"dm_register_directory -c -r -t 4 -s {shlex.quote(src_dir)} {shlex.quote(dst_dir)}"
-    run_dm_cmd(dm_cmd=cmd, errormsg="dm_register_directory failed during deposit.")
+    exclude_file = None
+    try:
+        with NamedTemporaryFile("w", suffix=".exclude", delete=False) as ef:
+            ef.write(".*\n**/.*\n")
+            exclude_file = ef.name
+        cmd = (
+            f"dm_register_directory -c -r -t 4 -s"
+            f" -e {shlex.quote(exclude_file)}"
+            f" {shlex.quote(src_dir)} {shlex.quote(dst_dir)}"
+        )
+        run_dm_cmd(dm_cmd=cmd, errormsg="dm_register_directory failed during deposit.")
+    finally:
+        if exclude_file and os.path.exists(exclude_file):
+            os.remove(exclude_file)
     _ok("Transfer completed.")
 
     if args.cleanup:
