@@ -75,6 +75,37 @@ def _print_hpcdme_properties():
         _info(f"Could not read {props_path}: {e}")
 
 
+_PROXY_KEYS = ("hpc.server.proxy.url", "hpc.server.proxy.port")
+
+
+def _check_no_proxy_settings():
+    """Return True if safe to proceed, False if active proxy lines are found."""
+    hpc_dm_utils = os.environ.get("HPC_DM_UTILS", "")
+    props_path = Path(hpc_dm_utils) / "hpcdme.properties"
+    bad_lines = []
+    try:
+        with open(props_path) as fh:
+            for lineno, line in enumerate(fh, start=1):
+                stripped = line.strip()
+                if stripped.startswith("#") or stripped == "":
+                    continue
+                if any(stripped.startswith(key) for key in _PROXY_KEYS):
+                    bad_lines.append((lineno, stripped))
+    except OSError as e:
+        _info(f"Could not read {props_path} for proxy check: {e}")
+        return True  # non-fatal; let the transfer attempt proceed
+    if bad_lines:
+        _error(
+            f"Active proxy settings found in {props_path}. "
+            "Per HPC-DME team guidance (Udit Sehgal), proxy lines must be "
+            "commented out. Please prefix each with '#' and retry."
+        )
+        for lineno, text in bad_lines:
+            print(f"    line {lineno}: {text}")
+        return False
+    return True
+
+
 def _resolved_path_for_report(raw_path):
     if not raw_path:
         return ""
@@ -438,6 +469,8 @@ def _run_deposit(args):
     _require_terminal_multiplexer()
     _ok("Session check passed (inside tmux/screen/Open OnDemand graphical session).")
     _print_hpcdme_properties()
+    if not _check_no_proxy_settings():
+        return 1
 
     source_folder = _resolve_existing_directory(args.folder)
     project_tag = _project_tag(args.projectnumber)
