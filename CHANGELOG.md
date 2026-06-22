@@ -5,6 +5,8 @@
   - Project collections are registered with: `project_title`, `project_description`, `origin`, `method`, `access`, `organism`, `summary_of_samples`, `project_start_date`.
   - Analysis/Rawdata sub-collections are registered with: `project_start_date`, `method`, `number_of_cases`.
   - `Rawdata` datatype is mapped to DME `collection_type` value `Analysis` (valid values: `Project`, `PI_Lab`, `Sample`, `Analysis`).
+- After Step 2 in `projark deposit`, print the active (non-comment) lines from `$HPC_DM_UTILS/hpcdme.properties` with a 4-space indent so users can verify their HPC-DME configuration before the transfer begins. (#56, @kopardev)
+- After Step 2 in `projark deposit`, check that proxy settings (`hpc.server.proxy.url`, `hpc.server.proxy.port`) are commented out in `hpcdme.properties`; abort with a descriptive error if any are active. Per HPC-DME team guidance (Udit Sehgal), proxy lines must not be set. (#57, @kopardev)
 
 ## v3.0.1
 
