@@ -1,5 +1,6 @@
 ## parkit development version
 
+- Fixed HPC-DME CLI `*.tmp` response files (e.g. `collection-registration-response-message.json.tmp`, `get-item-response-header.tmp`) accumulating in the user's working directory after every `projark` run. `run_dm_cmd` now executes each `dm_*` subprocess inside a per-call `tempfile.TemporaryDirectory` named `parkit_<username>_<random>/`, so all temp files are isolated and automatically deleted on return. This also prevents concurrent runs by the same or different users from overwriting each other's temp files. (#60, @kopardev)
 - Fixed `projark deposit` HTTP 400 errors from HPC-DME when creating Project and Analysis/Rawdata collections (#53, @kopardev):
   - `_register_collection` now accepts `extra_metadata` to send all required DME fields.
   - Project collections are registered with: `project_title`, `project_description`, `origin`, `method`, `access`, `organism`, `summary_of_samples`, `project_start_date`.
