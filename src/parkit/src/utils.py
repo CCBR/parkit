@@ -3,6 +3,7 @@ import sys
 import uuid
 import subprocess
 import hashlib
+import tempfile
 
 
 def has_write_permission(folder_path):
@@ -104,13 +105,16 @@ def run_dm_cmd(dm_cmd, errormsg="", returnproc=False, exitiffails=True):
     # cmd = f"export HPC_DM_UTILS=/data/kopardevn/SandBox/HPC_DME_APIs/utils && source $HPC_DM_UTILS/functions && {dm_cmd}"
     cmd = f"module load java/$HPC_DM_JAVA_VERSION && source $HPC_DM_UTILS/functions && {dm_cmd}"
     print(cmd)
-    proc = subprocess.run(
-        cmd,
-        capture_output=True,
-        shell=True,
-        text=True,
-        # env=env_vars
-    )
+    _user = os.environ.get("USER", "unknown")
+    with tempfile.TemporaryDirectory(prefix=f"parkit_{_user}_") as _dm_cwd:
+        proc = subprocess.run(
+            cmd,
+            capture_output=True,
+            shell=True,
+            text=True,
+            cwd=_dm_cwd,
+            # env=env_vars
+        )
     exitcode = str(proc.returncode)
     if exitcode != "0":
         print("returncode:" + exitcode)
