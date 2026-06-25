@@ -139,3 +139,27 @@ def which(program):
         if os.path.exists(executable) and os.access(executable, os.X_OK):
             return executable
     return None
+
+
+def human_size(num_bytes):
+    """Return a human-readable string for *num_bytes* (e.g. '500.00 GB')."""
+    units = ["B", "KB", "MB", "GB", "TB", "PB"]
+    value = float(num_bytes)
+    unit_index = 0
+    while value >= 1024 and unit_index < len(units) - 1:
+        value /= 1024.0
+        unit_index += 1
+    return f"{value:.2f} {units[unit_index]}"
+
+
+def collection_exists(collection_path):
+    """Return True if *collection_path* exists as a collection in HPC-DME."""
+    import shlex
+    cmd = f"dm_get_collection {shlex.quote(collection_path)}"
+    proc = run_dm_cmd(
+        dm_cmd=cmd,
+        errormsg=f"Failed while checking collection {collection_path}",
+        returnproc=True,
+        exitiffails=False,
+    )
+    return proc.returncode == 0

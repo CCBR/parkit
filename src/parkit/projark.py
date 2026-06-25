@@ -14,7 +14,8 @@ from tempfile import NamedTemporaryFile
 from parkit.src.VersionCheck import __version__
 from parkit.src.checkapisync import check_hpc_dme_apis_sync
 from parkit.src.createtar import createtar
-from parkit.src.utils import get_md5sum, run_dm_cmd
+from parkit.src.lscollection import ls_collection, query_all_dataobjects
+from parkit.src.utils import collection_exists, get_md5sum, human_size, run_dm_cmd
 
 
 DEFAULT_SPLIT_SIZE_GB = 500.0
@@ -22,13 +23,8 @@ NOTIFY_FROM_EMAIL = "NCICCBR@mail.nih.gov"
 
 
 def _human_size(num_bytes):
-    units = ["B", "KB", "MB", "GB", "TB", "PB"]
-    value = float(num_bytes)
-    unit_index = 0
-    while value >= 1024 and unit_index < len(units) - 1:
-        value /= 1024.0
-        unit_index += 1
-    return f"{value:.2f} {units[unit_index]}"
+    """Thin alias kept for internal use; delegates to the shared utility."""
+    return human_size(num_bytes)
 
 
 def _info(message):
@@ -298,14 +294,8 @@ def _require_terminal_multiplexer():
 
 
 def _collection_exists(collection_path):
-    cmd = f"dm_get_collection {shlex.quote(collection_path)}"
-    proc = run_dm_cmd(
-        dm_cmd=cmd,
-        errormsg=f"Failed while checking collection {collection_path}",
-        returnproc=True,
-        exitiffails=False,
-    )
-    return proc.returncode == 0
+    """Thin alias kept for internal use; delegates to the shared utility."""
+    return collection_exists(collection_path)
 
 
 def _dataobject_exists(object_path):
@@ -660,7 +650,7 @@ def _run_retrieve(args):
     # Fetch the full object listing once — used for existence checks and split
     # detection, replacing N serial dm_get_dataobject calls with a single query.
     _step(5, "fetching object listing from HPC-DME ...")
-    all_objects = _query_all_dataobjects(datatype_collection)
+    all_objects = query_all_dataobjects(datatype_collection)
     known_names = {Path(p).name for p, _s, _d, _dt in all_objects}
     _info(f"{len(known_names)} object(s) found in {datatype_collection}.")
 
@@ -713,158 +703,10 @@ def _run_retrieve(args):
     return 0
 
 
-_LS_CRITERIA = {
-    "compoundQuery": {
-        "operator": "AND",
-        "queries": [
-            {
-                "attribute": "source_file_size",
-                "value": "0",
-                "operator": "NUM_GREATER_OR_EQUAL",
-            }
-        ],
-    },
-    "detailedResponse": True,
-    "page": 1,
-    "totalCount": True,
-}
-
-
-def _parse_deposit_date(raw_value):
-    """Parse data_transfer_completed (e.g. '06-25-2026 01:30:16') → 'YYMMDD'.
-    Returns None if the value cannot be parsed.
-    """
-    if not raw_value:
-        return None
-    for fmt in ("%m-%d-%Y %H:%M:%S", "%m-%d-%Y"):
-        try:
-            return datetime.strptime(str(raw_value).strip(), fmt).strftime("%y%m%d")
-        except ValueError:
-            pass
-    return None
-
-
-def _query_all_dataobjects(project_path):
-    """Return a list of (absolute_path, size_bytes, depositor, deposit_date) for
-    every data object under *project_path*, iterating through all pages.
-
-    *depositor* is the display name of the registering user (registered_by_name)
-    falling back to their userid (registered_by), or None if unavailable.
-    *deposit_date* is data_transfer_completed formatted as YYMMDD, or None.
-    """
-    objects = []
-    page = 1
-    while True:
-        criteria = dict(_LS_CRITERIA)
-        criteria["page"] = page
-        with NamedTemporaryFile("w", suffix=".json", delete=False) as tmp:
-            json.dump(criteria, tmp, indent=2)
-            criteria_file = tmp.name
-        try:
-            cmd = (
-                f"dm_query_dataobject -o /dev/stdout"
-                f" {shlex.quote(criteria_file)} {shlex.quote(project_path)}"
-            )
-            proc = run_dm_cmd(
-                dm_cmd=cmd,
-                errormsg="dm_query_dataobject failed during ls",
-                returnproc=True,
-                exitiffails=False,
-            )
-        finally:
-            if os.path.exists(criteria_file):
-                os.remove(criteria_file)
-
-        if proc.returncode != 0:
-            _info("dm_query_dataobject returned non-zero; no objects found or query failed.")
-            break
-
-        try:
-            data = json.loads(proc.stdout)
-        except (json.JSONDecodeError, AttributeError):
-            _info("Could not parse dm_query_dataobject output as JSON.")
-            break
-
-        page_items = data.get("dataObjects", []) or []
-        for item in page_items:
-            abs_path = (item.get("dataObject") or {}).get("absolutePath", "")
-            size = None
-            depositor_name = None
-            depositor_id = None
-            deposit_date = None
-            for entry in (item.get("metadataEntries") or {}).get("selfMetadataEntries", []):
-                attr = entry.get("attribute")
-                if attr == "source_file_size":
-                    try:
-                        size = int(entry["value"])
-                    except (ValueError, TypeError):
-                        pass
-                elif attr == "registered_by_name":
-                    depositor_name = str(entry["value"]).strip() or None
-                elif attr == "registered_by":
-                    depositor_id = str(entry["value"]).strip() or None
-                elif attr == "data_transfer_completed":
-                    deposit_date = _parse_deposit_date(entry["value"])
-            depositor = depositor_name or depositor_id
-            if abs_path:
-                objects.append((abs_path, size, depositor, deposit_date))
-
-        total = data.get("totalCount", 0) or 0
-        limit = data.get("limit", 100) or 100
-        if page * limit >= total:
-            break
-        page += 1
-
-    return objects
-
-
-def _render_ls_tree(project_path, objects):
-    """Print a tree of *objects* grouped by their immediate parent sub-collection."""
-    # Group objects by their direct parent path (sub-collection)
-    sub_collections: dict[str, list[tuple[str, int | None, str | None, str | None]]] = {}
-    for abs_path, size, depositor, deposit_date in objects:
-        parent = str(Path(abs_path).parent)
-        sub_collections.setdefault(parent, []).append((abs_path, size, depositor, deposit_date))
-
-    # Compute sub-collection sizes (sum of known object sizes)
-    def _sub_size(items):
-        total = 0
-        for _, s, _d, _dt in items:
-            if s is None:
-                return None
-            total += s
-        return total
-
-    # Project header — use the short name (last path component)
-    project_name = Path(project_path).name
-    total_all = sum(s for _, s, _d, _dt in objects if s is not None) if objects else 0
-    print(f"{project_name}  ({_human_size(total_all)})")
-
-    sorted_subs = sorted(sub_collections.keys())
-    for sub_idx, sub_path in enumerate(sorted_subs):
-        is_last_sub = sub_idx == len(sorted_subs) - 1
-        sub_connector = "└──" if is_last_sub else "├──"
-        sub_name = Path(sub_path).name
-        sub_sz = _sub_size(sub_collections[sub_path])
-        sub_sz_str = f"  ({_human_size(sub_sz)})" if sub_sz is not None else ""
-        print(f"{sub_connector} {sub_name}/{sub_sz_str}")
-
-        child_prefix = "    " if is_last_sub else "│   "
-        items = sorted(sub_collections[sub_path], key=lambda x: Path(x[0]).name)
-        for item_idx, (abs_path, size, depositor, deposit_date) in enumerate(items):
-            is_last_item = item_idx == len(items) - 1
-            item_connector = "└──" if is_last_item else "├──"
-            fname = Path(abs_path).name
-            sz_str = _human_size(size) if size is not None else "unknown"
-            dep_col = ",".join(filter(None, [depositor, deposit_date])) or ""
-            print(f"{child_prefix}{item_connector} {fname:<50}  {sz_str:<12}  {dep_col}")
-
-
 def _run_ls(args):
     _print_hpcdme_properties()
 
-    project_number = args.projectnumber
-    project_path = _project_collection_path(project_number)
+    project_path = _project_collection_path(args.projectnumber)
     _info(f"Listing HPC-DME collection: {project_path}")
     _info(
         "Note: the DME search index may lag up to 60 minutes behind recent deposits."
@@ -878,17 +720,7 @@ def _run_ls(args):
     _ok("Project collection found.")
 
     _step(2, "querying data objects ...")
-    objects = _query_all_dataobjects(project_path)
-    _ok(f"{len(objects)} object(s) found.")
-
-    if not objects:
-        _info("No data objects found under this project collection.")
-        return 0
-
-    print()
-    _render_ls_tree(project_path, objects)
-    print()
-    return 0
+    return ls_collection(project_path, json_output=args.json)
 
 
 def _build_parser():
@@ -1019,6 +851,12 @@ def _build_parser():
         metavar="PROJECTNUMBER",
         type=_normalize_project_number,
         help="Project number (e.g. 982, ccbr982, CCBR-982)",
+    )
+    parser_ls.add_argument(
+        "--json",
+        action="store_true",
+        default=False,
+        help="Emit results as a JSON array instead of the tree view",
     )
 
     return parser
