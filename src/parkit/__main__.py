@@ -1,12 +1,15 @@
 #!/usr/bin/env python3
 
 import argparse
+import sys
 from parkit.src.createtar import createtar, tarprep
 from parkit.src.createmetadata import createmetadata
 from parkit.src.createemptycollection import createemptycollection
 from parkit.src.deposittar import deposittocollection
 from parkit.src.checkapisync import check_hpc_dme_apis_sync
 from parkit.src.syncapi import syncapi
+from parkit.src.lscollection import ls_collection
+from parkit.src.utils import collection_exists
 from parkit.src.VersionCheck import __version__
 
 
@@ -120,6 +123,24 @@ def main():
         default="Analysis",  # or Rawdata
     )
 
+    # Create a subcommand for "ls"
+    parser_ls = subparsers.add_parser(
+        "ls",
+        help="list data objects under any HPC-DME collection path",
+    )
+    parser_ls.add_argument(
+        "collection_path",
+        metavar="COLLECTION_PATH",
+        type=str,
+        help="Full HPC-DME collection path (e.g. /CCBR_Archive/GRIDFTP/Project_CCBR-982)",
+    )
+    parser_ls.add_argument(
+        "--json",
+        action="store_true",
+        default=False,
+        help="Emit results as a JSON array instead of the tree view",
+    )
+
     # Support "parkit <subcommand> --version" for all subcommands.
     subcommand_parsers = [
         parser_createtar,
@@ -129,6 +150,7 @@ def main():
         parser_createmetadata,
         parser_createemptycollection,
         parser_deposittar,
+        parser_ls,
     ]
     for subparser in subcommand_parsers:
         subparser.add_argument("-v", "--version", action="version", version=__version__)
@@ -145,6 +167,7 @@ def main():
         "deposittar",
         "checkapisync",
         "syncapi",
+        "ls",
     ]
     if args.command not in subcommands:
         parser.print_help()
@@ -171,6 +194,14 @@ def main():
         check_hpc_dme_apis_sync(args.repo)
     elif args.command == "syncapi":
         syncapi(args.repo)
+    elif args.command == "ls":
+        print("Note: DME search index may lag up to 60 minutes behind recent deposits.")
+        if not collection_exists(args.collection_path):
+            print(
+                f"ERROR: Collection does not exist in HPC-DME: {args.collection_path}"
+            )
+            sys.exit(1)
+        sys.exit(ls_collection(args.collection_path, json_output=args.json))
     for f in files_created:
         print(f"createmetadata: {f} file was created!")
 

@@ -3,6 +3,7 @@ import sys
 import uuid
 import subprocess
 import hashlib
+import tempfile
 
 
 def has_write_permission(folder_path):
@@ -104,13 +105,16 @@ def run_dm_cmd(dm_cmd, errormsg="", returnproc=False, exitiffails=True):
     # cmd = f"export HPC_DM_UTILS=/data/kopardevn/SandBox/HPC_DME_APIs/utils && source $HPC_DM_UTILS/functions && {dm_cmd}"
     cmd = f"module load java/$HPC_DM_JAVA_VERSION && source $HPC_DM_UTILS/functions && {dm_cmd}"
     print(cmd)
-    proc = subprocess.run(
-        cmd,
-        capture_output=True,
-        shell=True,
-        text=True,
-        # env=env_vars
-    )
+    _user = os.environ.get("USER", "unknown")
+    with tempfile.TemporaryDirectory(prefix=f"parkit_{_user}_") as _dm_cwd:
+        proc = subprocess.run(
+            cmd,
+            capture_output=True,
+            shell=True,
+            text=True,
+            cwd=_dm_cwd,
+            # env=env_vars
+        )
     exitcode = str(proc.returncode)
     if exitcode != "0":
         print("returncode:" + exitcode)
@@ -135,3 +139,28 @@ def which(program):
         if os.path.exists(executable) and os.access(executable, os.X_OK):
             return executable
     return None
+
+
+def human_size(num_bytes):
+    """Return a human-readable string for *num_bytes* (e.g. '500.00 GB')."""
+    units = ["B", "KB", "MB", "GB", "TB", "PB"]
+    value = float(num_bytes)
+    unit_index = 0
+    while value >= 1024 and unit_index < len(units) - 1:
+        value /= 1024.0
+        unit_index += 1
+    return f"{value:.2f} {units[unit_index]}"
+
+
+def collection_exists(collection_path):
+    """Return True if *collection_path* exists as a collection in HPC-DME."""
+    import shlex
+
+    cmd = f"dm_get_collection {shlex.quote(collection_path)}"
+    proc = run_dm_cmd(
+        dm_cmd=cmd,
+        errormsg=f"Failed while checking collection {collection_path}",
+        returnproc=True,
+        exitiffails=False,
+    )
+    return proc.returncode == 0
