@@ -1039,14 +1039,15 @@ def main():
 
     end_time = datetime.now().astimezone()
     status = "SUCCESS" if return_code == 0 else "FAILED"
-    _send_notification_email(
-        args=args,
-        status=status,
-        return_code=return_code,
-        start_time=start_time,
-        end_time=end_time,
-        error_message=error_message,
-    )
+    if args.command != "ls":
+        _send_notification_email(
+            args=args,
+            status=status,
+            return_code=return_code,
+            start_time=start_time,
+            end_time=end_time,
+            error_message=error_message,
+        )
 
     sys.exit(return_code)
 
