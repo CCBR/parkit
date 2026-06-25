@@ -128,43 +128,93 @@ def query_all_dataobjects(collection_path):
     return objects
 
 
-def render_ls_tree(collection_path, objects):
-    """Print *objects* as a box-drawing tree grouped by immediate parent path."""
-    sub_collections: dict[str, list[tuple[str, int | None, str | None, str | None]]] = {}
+def _build_tree(collection_path, objects):
+    """Build a nested dict tree from *objects* relative to *collection_path*.
+
+    Each node is a dict with:
+      '__files__': list of (name, abs_path, size, depositor, deposit_date)
+      '<subdir>':  child node (same structure)
+    """
+    root = {"__files__": []}
+    prefix = collection_path.rstrip("/") + "/"
     for abs_path, size, depositor, deposit_date in objects:
-        parent = str(Path(abs_path).parent)
-        sub_collections.setdefault(parent, []).append((abs_path, size, depositor, deposit_date))
+        if not abs_path.startswith(prefix):
+            continue
+        rel = abs_path[len(prefix):]
+        parts = rel.split("/")
+        node = root
+        for part in parts[:-1]:
+            node = node.setdefault(part, {"__files__": []})
+        node["__files__"].append((parts[-1], abs_path, size, depositor, deposit_date))
+    return root
 
-    def _sub_size(items):
-        total = 0
-        for _, s, _d, _dt in items:
-            if s is None:
-                return None
-            total += s
-        return total
 
+def _node_size(node):
+    """Recursively sum source_file_size for all files under *node*. Returns None if any unknown."""
+    total = 0
+    for _name, _path, s, _d, _dt in node.get("__files__", []):
+        if s is None:
+            return None
+        total += s
+    for key, child in node.items():
+        if key == "__files__":
+            continue
+        cs = _node_size(child)
+        if cs is None:
+            return None
+        total += cs
+    return total
+
+
+def _render_node(node, prefix, is_last, label, indent):
+    """Recursively render a tree node."""
+    connector = "└──" if is_last else "├──"
+    sz = _node_size(node)
+    sz_str = f"  ({human_size(sz)})" if sz is not None else ""
+    # directory node
+    print(f"{indent}{connector} {label}/{sz_str}")
+    child_indent = indent + ("    " if is_last else "│   ")
+
+    subdirs = sorted(k for k in node if k != "__files__")
+    files = sorted(node.get("__files__", []), key=lambda x: x[0])
+    total_children = len(subdirs) + len(files)
+
+    for idx, subdir in enumerate(subdirs):
+        is_last_child = (idx == total_children - 1)
+        _render_node(node[subdir], prefix, is_last_child, subdir, child_indent)
+
+    for idx, (fname, _path, size, depositor, deposit_date) in enumerate(files):
+        item_idx = len(subdirs) + idx
+        is_last_item = (item_idx == total_children - 1)
+        item_connector = "└──" if is_last_item else "├──"
+        sz_str = human_size(size) if size is not None else "unknown"
+        dep_col = ",".join(filter(None, [depositor, deposit_date])) or ""
+        print(f"{child_indent}{item_connector} {fname:<50}  {sz_str:<12}  {dep_col}")
+
+
+def render_ls_tree(collection_path, objects):
+    """Print *objects* as a recursive box-drawing tree rooted at *collection_path*."""
+    root = _build_tree(collection_path, objects)
     collection_name = Path(collection_path).name
-    total_all = sum(s for _, s, _d, _dt in objects if s is not None) if objects else 0
-    print(f"{collection_name}  ({human_size(total_all)})")
+    total_all = _node_size(root)
+    total_str = f"  ({human_size(total_all)})" if total_all is not None else ""
+    print(f"{collection_name}{total_str}")
 
-    sorted_subs = sorted(sub_collections.keys())
-    for sub_idx, sub_path in enumerate(sorted_subs):
-        is_last_sub = sub_idx == len(sorted_subs) - 1
-        sub_connector = "└──" if is_last_sub else "├──"
-        sub_name = Path(sub_path).name
-        sub_sz = _sub_size(sub_collections[sub_path])
-        sub_sz_str = f"  ({human_size(sub_sz)})" if sub_sz is not None else ""
-        print(f"{sub_connector} {sub_name}/{sub_sz_str}")
+    subdirs = sorted(k for k in root if k != "__files__")
+    files = sorted(root.get("__files__", []), key=lambda x: x[0])
+    total_top = len(subdirs) + len(files)
 
-        child_prefix = "    " if is_last_sub else "│   "
-        items = sorted(sub_collections[sub_path], key=lambda x: Path(x[0]).name)
-        for item_idx, (abs_path, size, depositor, deposit_date) in enumerate(items):
-            is_last_item = item_idx == len(items) - 1
-            item_connector = "└──" if is_last_item else "├──"
-            fname = Path(abs_path).name
-            sz_str = human_size(size) if size is not None else "unknown"
-            dep_col = ",".join(filter(None, [depositor, deposit_date])) or ""
-            print(f"{child_prefix}{item_connector} {fname:<50}  {sz_str:<12}  {dep_col}")
+    for idx, subdir in enumerate(subdirs):
+        is_last = (idx == total_top - 1)
+        _render_node(root[subdir], collection_path, is_last, subdir, "")
+
+    for idx, (fname, _path, size, depositor, deposit_date) in enumerate(files):
+        item_idx = len(subdirs) + idx
+        is_last = (item_idx == total_top - 1)
+        connector = "└──" if is_last else "├──"
+        sz_str = human_size(size) if size is not None else "unknown"
+        dep_col = ",".join(filter(None, [depositor, deposit_date])) or ""
+        print(f"{connector} {fname:<50}  {sz_str:<12}  {dep_col}")
 
 
 def render_ls_json(objects):
