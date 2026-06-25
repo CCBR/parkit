@@ -41,8 +41,10 @@ projark retrieve -p 12345 -u
 2. Helix host check
 3. `tmux`/`screen`/Open OnDemand graphical session check
 4. Validate source collection exists
-5. Download selected objects (`dm_download_dataobject`) or full collection (`dm_download_collection`)
-6. Optionally merge `*.tar_0001`, `*.tar_0002`, ... into tar files
+5. Fetch full object listing via a single `dm_query_dataobject` call; validate all `--filenames` entries against the in-memory result set
+6. Print advisory if split tar parts (`*.tar_NNNN`) are detected and `--unsplit` was not passed
+7. Download selected objects (`dm_download_dataobject`) or full collection (`dm_download_collection`)
+8. Optionally merge `*.tar_0001`, `*.tar_0002`, ... into tar files
 
 ## Merge Behavior
 

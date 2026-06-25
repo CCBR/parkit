@@ -104,7 +104,7 @@ Runtime logging and notifications:
 
 ### Prerequisites:
 
-- On helix or biowulf you can get access to `parkit` by loading the appropriate conda env
+- On helix or biowulf you can get access to `parkit` by loading the appropriate mamba env
 
 ```bash
 mamba activate /vf/users/CCBR_Pipeliner/db/PipeDB/miniforge3/envs/parkit

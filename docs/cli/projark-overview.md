@@ -16,10 +16,11 @@ All print the same package-aware message.
 
 - `deposit`: archive local folder content to HPC-DME project collection.
 - `retrieve`: retrieve archived data objects back to local scratch.
+- `ls`: list all data objects in a project's vault collection (no gates or email required).
 
 ## Safety Gates
 
-Both subcommands run preflight checks:
+`deposit` and `retrieve` run preflight checks:
 
 - `parkit checkapisync`
 - host must be `helix.nih.gov`
@@ -29,5 +30,6 @@ Both subcommands run preflight checks:
 ## Logging and Notification
 
 - `projark` logs include ISO 8601 timestamps.
-- On completion/failure, `projark` sends an email notification to `$USER@nih.gov`.
+- On completion/failure, `projark deposit` and `projark retrieve` send an email notification to `$USER@nih.gov`.
 - Notification sender is `NCICCBR@mail.nih.gov`.
+- `projark ls` does **not** send email and does not require Helix, tmux, or a sync gate.

@@ -34,3 +34,39 @@ If token generation fails during `syncapi`, verify credentials and inspect:
 ## Split Merge Expectations
 
 `--unsplit` merges only files matching `*.tar_0001`, `*.tar_0002`, etc. If none are present, merge is skipped.
+
+## Ghost Records After a Partial Deposit
+
+If a prior deposit failed mid-transfer, HPC-DME may have created catalog records for some files without any associated data ("ghost records"). A subsequent deposit attempt will fail with:
+
+```
+Detected data object record without system metadata <path>
+```
+
+Delete the ghost records before retrying:
+
+```bash
+dm_delete_dataobject /CCBR_Archive/GRIDFTP/Project_CCBR-1128/Analysis/ccbr1128.tar.filelist
+dm_delete_dataobject /CCBR_Archive/GRIDFTP/Project_CCBR-1128/Analysis/ccbr1128.tar.filelist.md5
+dm_delete_dataobject /CCBR_Archive/GRIDFTP/Project_CCBR-1128/Analysis/ccbr1128.tar.md5
+```
+
+Then rerun `projark deposit`.
+
+## Proxy Settings Error
+
+If `projark deposit` aborts with:
+
+```
+Active proxy settings found in hpcdme.properties
+```
+
+Open `$HPC_DM_UTILS/hpcdme.properties` and comment out any active `hpc.server.proxy.url` or `hpc.server.proxy.port` lines by prefixing them with `#`. Then retry.
+
+## `projark ls` Shows No Results After Deposit
+
+The HPC-DME search index lags up to **60 minutes** behind recent deposits. Wait and retry:
+
+```bash
+projark ls <projectnumber>
+```

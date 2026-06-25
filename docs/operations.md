@@ -40,5 +40,23 @@ Default is `500` GB.
 ## Logging and Notifications
 
 - `projark` logs include ISO 8601 timestamps.
-- On completion/failure, `projark` sends email to `$USER@nih.gov`.
+- On completion/failure, `projark deposit` and `projark retrieve` send email to `$USER@nih.gov`.
 - Notification sender is `NCICCBR@mail.nih.gov`.
+- `projark ls` and `parkit ls` do not send email and require no session/gate checks.
+
+## HPC-DME Configuration
+
+- **Proxy settings** (`hpc.server.proxy.url`, `hpc.server.proxy.port`) must be **commented out** in `$HPC_DM_UTILS/hpcdme.properties`. `projark deposit` checks this and aborts with an error if active proxy lines are found.
+- After the preflight checks, `projark deposit` prints the active lines from `hpcdme.properties` so you can verify configuration before the transfer begins.
+
+## Dot-File Exclusion
+
+Hidden files (filenames starting with `.`) are automatically excluded from `dm_register_directory` during deposit. This prevents shell per-directory history files and other hidden files from being registered to HPC-DME.
+
+## Temp File Isolation
+
+`dm_*` CLI commands produce response files (e.g. `*.tmp`) that are now isolated inside a per-call temporary directory and automatically deleted after each command. No temp files accumulate in your working directory.
+
+## DME Search Index Lag
+
+The HPC-DME search index used by `projark ls` and `parkit ls` can lag up to **60 minutes** behind a recent deposit. If newly deposited files do not appear in `ls` output, wait and retry.

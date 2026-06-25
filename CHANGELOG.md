@@ -1,4 +1,4 @@
-## parkit development version
+## v3.1.0
 
 - Added `projark ls <projectnumber>` subcommand to list all data objects in a project's HPC-DME vault collection as a tree with human-readable sizes, depositor name, and deposit date (#62, @kopardev):
   - Uses a single `dm_query_dataobject` call (no extra API calls for per-file metadata).

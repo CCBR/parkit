@@ -34,14 +34,15 @@ projark deposit \
 ## Runtime Behavior
 
 1. Sync gate (`checkapisync`)
-2. Helix host check
+2. Helix host check; print active `hpcdme.properties` lines for verification; abort if proxy settings are active
 3. `tmux`/`screen`/Open OnDemand graphical session check
-4. Ensure target collections exist (create as needed)
+4. Ensure target collections exist (create as needed with all required HPC-DME metadata)
 5. Stage tar + filelist in `/scratch/$USER/CCBR-<projectnumber>/<datatype>/`
 6. Split tar if above split threshold
 7. Generate `.md5` for staged files
-8. Transfer via `dm_register_directory`
-9. Cleanup scratch (default on)
+8. Check staged files against destination vault; rename with counter if conflict found
+9. Transfer via `dm_register_directory` (hidden/dot files automatically excluded)
+10. Cleanup scratch (default on)
 
 ## Notes
 
@@ -51,3 +52,7 @@ projark deposit \
 - Relative folder paths are converted to absolute paths before use.
 - For raw data, pass `--datatype rawdata`.
 - `projark` sends completion/failure email to `$USER@nih.gov` from `NCICCBR@mail.nih.gov`.
+- **Proxy settings** (`hpc.server.proxy.url`, `hpc.server.proxy.port`) must be commented out in `hpcdme.properties`. Deposit aborts with a descriptive error if active proxy lines are found.
+- **Conflict handling**: if a staged file already exists in the destination collection, the staged files are renamed by inserting a zero-padded counter before the first extension (e.g. `ccbr1431.tar` → `ccbr1431_001.tar`).
+- **Split-tar conflict detection**: checks for both the base tarball name and the first split-chunk suffix (`*.tar_0001`) to detect prior split deposits.
+- **Hidden files** (filenames starting with `.`) are automatically excluded from `dm_register_directory`.
