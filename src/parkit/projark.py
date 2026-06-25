@@ -680,7 +680,9 @@ def _run_retrieve(args):
         _step(7, "verifying all requested objects exist ...")
         missing = [f for f in filenames if f not in known_names]
         for filename in filenames:
-            _info(f"  - {filename}: {'FOUND' if filename in known_names else 'MISSING'}")
+            _info(
+                f"  - {filename}: {'FOUND' if filename in known_names else 'MISSING'}"
+            )
         if missing:
             return _error(f"Cannot proceed; missing object(s): {', '.join(missing)}")
 
@@ -776,7 +778,9 @@ def _query_all_dataobjects(project_path):
                 os.remove(criteria_file)
 
         if proc.returncode != 0:
-            _info("dm_query_dataobject returned non-zero; no objects found or query failed.")
+            _info(
+                "dm_query_dataobject returned non-zero; no objects found or query failed."
+            )
             break
 
         try:
@@ -792,7 +796,9 @@ def _query_all_dataobjects(project_path):
             depositor_name = None
             depositor_id = None
             deposit_date = None
-            for entry in (item.get("metadataEntries") or {}).get("selfMetadataEntries", []):
+            for entry in (item.get("metadataEntries") or {}).get(
+                "selfMetadataEntries", []
+            ):
                 attr = entry.get("attribute")
                 if attr == "source_file_size":
                     try:
@@ -821,10 +827,14 @@ def _query_all_dataobjects(project_path):
 def _render_ls_tree(project_path, objects):
     """Print a tree of *objects* grouped by their immediate parent sub-collection."""
     # Group objects by their direct parent path (sub-collection)
-    sub_collections: dict[str, list[tuple[str, int | None, str | None, str | None]]] = {}
+    sub_collections: dict[
+        str, list[tuple[str, int | None, str | None, str | None]]
+    ] = {}
     for abs_path, size, depositor, deposit_date in objects:
         parent = str(Path(abs_path).parent)
-        sub_collections.setdefault(parent, []).append((abs_path, size, depositor, deposit_date))
+        sub_collections.setdefault(parent, []).append(
+            (abs_path, size, depositor, deposit_date)
+        )
 
     # Compute sub-collection sizes (sum of known object sizes)
     def _sub_size(items):
@@ -857,7 +867,9 @@ def _render_ls_tree(project_path, objects):
             fname = Path(abs_path).name
             sz_str = _human_size(size) if size is not None else "unknown"
             dep_col = ",".join(filter(None, [depositor, deposit_date])) or ""
-            print(f"{child_prefix}{item_connector} {fname:<50}  {sz_str:<12}  {dep_col}")
+            print(
+                f"{child_prefix}{item_connector} {fname:<50}  {sz_str:<12}  {dep_col}"
+            )
 
 
 def _run_ls(args):
@@ -866,15 +878,11 @@ def _run_ls(args):
     project_number = args.projectnumber
     project_path = _project_collection_path(project_number)
     _info(f"Listing HPC-DME collection: {project_path}")
-    _info(
-        "Note: the DME search index may lag up to 60 minutes behind recent deposits."
-    )
+    _info("Note: the DME search index may lag up to 60 minutes behind recent deposits.")
 
     _step(1, f"verifying project collection exists: {project_path}")
     if not _collection_exists(project_path):
-        return _error(
-            f"Project collection does not exist in HPC-DME: {project_path}"
-        )
+        return _error(f"Project collection does not exist in HPC-DME: {project_path}")
     _ok("Project collection found.")
 
     _step(2, "querying data objects ...")
