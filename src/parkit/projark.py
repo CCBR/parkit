@@ -694,10 +694,10 @@ def _run_retrieve(args):
         _step(8, "per-file verification skipped in full collection mode.")
 
     if args.unspilt:
-        _step(9, "--unspilt requested; checking for tar parts to merge ...")
+        _step(9, "--unsplit requested; checking for tar parts to merge ...")
         _merge_split_tar_parts(target_dir)
     else:
-        _step(9, "--unspilt not requested; skipping merge step.")
+        _step(9, "--unsplit not requested; skipping merge step.")
 
     _ok("Retrieve workflow finished successfully.")
     return 0
