@@ -14,7 +14,8 @@ from tempfile import NamedTemporaryFile
 from parkit.src.VersionCheck import __version__
 from parkit.src.checkapisync import check_hpc_dme_apis_sync
 from parkit.src.createtar import createtar
-from parkit.src.utils import get_md5sum, run_dm_cmd
+from parkit.src.lscollection import ls_collection, query_all_dataobjects
+from parkit.src.utils import collection_exists, get_md5sum, human_size, run_dm_cmd
 
 
 DEFAULT_SPLIT_SIZE_GB = 500.0
@@ -22,13 +23,8 @@ NOTIFY_FROM_EMAIL = "NCICCBR@mail.nih.gov"
 
 
 def _human_size(num_bytes):
-    units = ["B", "KB", "MB", "GB", "TB", "PB"]
-    value = float(num_bytes)
-    unit_index = 0
-    while value >= 1024 and unit_index < len(units) - 1:
-        value /= 1024.0
-        unit_index += 1
-    return f"{value:.2f} {units[unit_index]}"
+    """Thin alias kept for internal use; delegates to the shared utility."""
+    return human_size(num_bytes)
 
 
 def _info(message):
@@ -58,6 +54,52 @@ def _duration_hms(start_time, end_time):
     hours, remainder = divmod(total_seconds, 3600)
     minutes, seconds = divmod(remainder, 60)
     return f"{hours:02d}:{minutes:02d}:{seconds:02d}"
+
+
+def _print_hpcdme_properties():
+    hpc_dm_utils = os.environ.get("HPC_DM_UTILS", "")
+    props_path = Path(hpc_dm_utils) / "hpcdme.properties"
+    _info(f"HPC-DME configuration ({props_path}):")
+    try:
+        with open(props_path) as fh:
+            for line in fh:
+                stripped = line.rstrip("\n")
+                if stripped.startswith("#") or stripped.strip() == "":
+                    continue
+                print(f"    {stripped}")
+    except OSError as e:
+        _info(f"Could not read {props_path}: {e}")
+
+
+_PROXY_KEYS = ("hpc.server.proxy.url", "hpc.server.proxy.port")
+
+
+def _check_no_proxy_settings():
+    """Return True if safe to proceed, False if active proxy lines are found."""
+    hpc_dm_utils = os.environ.get("HPC_DM_UTILS", "")
+    props_path = Path(hpc_dm_utils) / "hpcdme.properties"
+    bad_lines = []
+    try:
+        with open(props_path) as fh:
+            for lineno, line in enumerate(fh, start=1):
+                stripped = line.strip()
+                if stripped.startswith("#") or stripped == "":
+                    continue
+                if any(stripped.startswith(key) for key in _PROXY_KEYS):
+                    bad_lines.append((lineno, stripped))
+    except OSError as e:
+        _info(f"Could not read {props_path} for proxy check: {e}")
+        return True  # non-fatal; let the transfer attempt proceed
+    if bad_lines:
+        _error(
+            f"Active proxy settings found in {props_path}. "
+            "Per HPC-DME team guidance (Udit Sehgal), proxy lines must be "
+            "commented out. Please prefix each with '#' and retry."
+        )
+        for lineno, text in bad_lines:
+            print(f"    line {lineno}: {text}")
+        return False
+    return True
 
 
 def _resolved_path_for_report(raw_path):
@@ -252,14 +294,8 @@ def _require_terminal_multiplexer():
 
 
 def _collection_exists(collection_path):
-    cmd = f"dm_get_collection {shlex.quote(collection_path)}"
-    proc = run_dm_cmd(
-        dm_cmd=cmd,
-        errormsg=f"Failed while checking collection {collection_path}",
-        returnproc=True,
-        exitiffails=False,
-    )
-    return proc.returncode == 0
+    """Thin alias kept for internal use; delegates to the shared utility."""
+    return collection_exists(collection_path)
 
 
 def _dataobject_exists(object_path):
@@ -273,15 +309,63 @@ def _dataobject_exists(object_path):
     return proc.returncode == 0
 
 
-def _register_collection(collection_path, collection_type):
-    # Minimal metadata payload used to create a collection if it does not exist.
+def _insert_counter(name, n):
+    """Insert _{n:03d} before the first '.' in name, or append if no '.' exists.
+
+    Examples:
+        ccbr1431.tar           -> ccbr1431_001.tar
+        ccbr1431.tar.filelist  -> ccbr1431_001.tar.filelist
+        ccbr1431.tar_0001      -> ccbr1431_001.tar_0001
+    """
+    dot = name.find(".")
+    if dot == -1:
+        return f"{name}_{n:03d}"
+    return f"{name[:dot]}_{n:03d}{name[dot:]}"
+
+
+def _resolve_tarname(tarname, datatype_collection):
+    """Return tarname unchanged if no conflict exists in HPC-DME, otherwise return
+    the name with the lowest free _NNN counter inserted before the first extension.
+
+    A conflict exists when either the base tarball (e.g. ccbr982.tar) **or** its
+    first split chunk (e.g. ccbr982.tar_0001) already exists in the collection.
+    The latter covers prior deposits whose tarball was large enough to be split,
+    in which case the base name never lands in HPC-DME as a data object.
+    """
+
+    def _name_is_taken(name):
+        if _dataobject_exists(f"{datatype_collection}/{name}"):
+            return True
+        first_chunk = f"{name}_0001"
+        return _dataobject_exists(f"{datatype_collection}/{first_chunk}")
+
+    if not _name_is_taken(tarname):
+        _info(f"No name conflict found for {tarname!r} in HPC-DME.")
+        return tarname
+    for n in range(1, 1000):
+        candidate = _insert_counter(tarname, n)
+        if not _name_is_taken(candidate):
+            _info(
+                f"Name conflict: {tarname!r} already exists in HPC-DME. "
+                f"Using {candidate!r} instead."
+            )
+            return candidate
+    raise RuntimeError(
+        f"Could not find a free name for {tarname!r} in {datatype_collection} after 999 attempts."
+    )
+
+
+def _register_collection(collection_path, collection_type, extra_metadata=None):
     payload = {
         "metadataEntries": [{"attribute": "collection_type", "value": collection_type}]
     }
+    if extra_metadata:
+        payload["metadataEntries"].extend(extra_metadata)
     with NamedTemporaryFile("w", suffix=".json", delete=False) as tmp:
         json.dump(payload, tmp, indent=2)
         temp_json = tmp.name
 
+    _info(f"Collection registration payload:\n{json.dumps(payload, indent=2)}")
     try:
         cmd = f"dm_register_collection {shlex.quote(temp_json)} {shlex.quote(collection_path)}"
         run_dm_cmd(
@@ -292,7 +376,7 @@ def _register_collection(collection_path, collection_type):
             os.remove(temp_json)
 
 
-def _ensure_deposit_collections(base_collection, datatype):
+def _ensure_deposit_collections(base_collection, datatype, project_number):
     datatype_collection = f"{base_collection}/{datatype}"
     _info(f"Step 3: verifying destination collection: {datatype_collection}")
     if _collection_exists(datatype_collection):
@@ -303,12 +387,41 @@ def _ensure_deposit_collections(base_collection, datatype):
     if not _collection_exists(base_collection):
         _info(f"Project collection missing: {base_collection}")
         _info("Creating project collection first ...")
-        _register_collection(base_collection, "Project")
+        project_label = f"CCBR-{project_number}"
+        today = datetime.now().strftime("%Y%m%d")
+        project_metadata = [
+            {"attribute": "project_title", "value": project_label},
+            {"attribute": "project_description", "value": project_label},
+            {"attribute": "origin", "value": "CCBR"},
+            {"attribute": "method", "value": "NGS"},
+            {"attribute": "access", "value": "Open Access"},
+            {"attribute": "organism", "value": "unknown"},
+            {"attribute": "summary_of_samples", "value": "unknown"},
+            {
+                "attribute": "project_start_date",
+                "value": today,
+                "dateFormat": "yyyyMMdd",
+            },
+        ]
+        _register_collection(
+            base_collection, "Project", extra_metadata=project_metadata
+        )
     else:
         _info("Project collection exists.")
 
     _info(f"Creating datatype collection: {datatype_collection}")
-    _register_collection(datatype_collection, datatype)
+    # DME valid collection_type values: [Project, PI_Lab, Sample, Analysis].
+    # "Rawdata" is not a valid type, so map it to "Analysis".
+    datatype_collection_type = "Analysis" if datatype == "Rawdata" else datatype
+    today = datetime.now().strftime("%Y%m%d")
+    datatype_metadata = [
+        {"attribute": "project_start_date", "value": today, "dateFormat": "yyyyMMdd"},
+        {"attribute": "method", "value": "NGS"},
+        {"attribute": "number_of_cases", "value": "unknown"},
+    ]
+    _register_collection(
+        datatype_collection, datatype_collection_type, extra_metadata=datatype_metadata
+    )
     return datatype_collection
 
 
@@ -391,18 +504,25 @@ def _run_deposit(args):
     )
     _require_terminal_multiplexer()
     _ok("Session check passed (inside tmux/screen/Open OnDemand graphical session).")
+    _print_hpcdme_properties()
+    if not _check_no_proxy_settings():
+        return 1
 
     source_folder = _resolve_existing_directory(args.folder)
     project_tag = _project_tag(args.projectnumber)
     base_collection = _project_collection_path(args.projectnumber)
     datatype = args.datatype
-    datatype_collection = _ensure_deposit_collections(base_collection, datatype)
+    datatype_collection = _ensure_deposit_collections(
+        base_collection, datatype, args.projectnumber
+    )
 
     scratch_root, datatype_dir = _prepare_scratch_dirs(project_tag, datatype)
 
     tarname = args.tarname if args.tarname else _default_tarname(args.projectnumber)
     if "/" in tarname:
         return _error("--tarname must be a file name, not a path.")
+    _info("Checking for tar file name conflict in HPC-DME destination collection ...")
+    tarname = _resolve_tarname(tarname, datatype_collection)
     tar_path = datatype_dir / tarname
 
     _step(5, f"creating tarball from folder: {source_folder}")
@@ -417,8 +537,20 @@ def _run_deposit(args):
     _step(6, "transferring staged directory to HPC-DME ...")
     src_dir = f"{datatype_dir}/"
     dst_dir = f"{datatype_collection}/"
-    cmd = f"dm_register_directory -c -r -t 4 -s {shlex.quote(src_dir)} {shlex.quote(dst_dir)}"
-    run_dm_cmd(dm_cmd=cmd, errormsg="dm_register_directory failed during deposit.")
+    exclude_file = None
+    try:
+        with NamedTemporaryFile("w", suffix=".exclude", delete=False) as ef:
+            ef.write(".*\n**/.*\n")
+            exclude_file = ef.name
+        cmd = (
+            f"dm_register_directory -c -r -t 4 -s"
+            f" -e {shlex.quote(exclude_file)}"
+            f" {shlex.quote(src_dir)} {shlex.quote(dst_dir)}"
+        )
+        run_dm_cmd(dm_cmd=cmd, errormsg="dm_register_directory failed during deposit.")
+    finally:
+        if exclude_file and os.path.exists(exclude_file):
+            os.remove(exclude_file)
     _ok("Transfer completed.")
 
     if args.cleanup:
@@ -515,30 +647,44 @@ def _run_retrieve(args):
     target_dir.mkdir(parents=True, exist_ok=True)
     _step(4, f"local download directory: {target_dir}")
 
+    # Fetch the full object listing once — used for existence checks and split
+    # detection, replacing N serial dm_get_dataobject calls with a single query.
+    _step(5, "fetching object listing from HPC-DME ...")
+    all_objects = query_all_dataobjects(datatype_collection)
+    known_names = {Path(p).name for p, _s, _d, _dt in all_objects}
+    _info(f"{len(known_names)} object(s) found in {datatype_collection}.")
+
+    # Detect split tar parts and warn/auto-set unsplit
+    split_names = {n for n in known_names if re.search(r"\.tar_\d{4}$", n)}
+    if split_names and not args.unspilt:
+        _info(
+            "Split tar parts detected in the collection "
+            f"({', '.join(sorted(split_names))}). "
+            "Pass --unsplit to automatically merge them after download."
+        )
+
     if args.filenames:
-        _step(5, "parsing requested filenames ...")
+        _step(6, "parsing requested filenames ...")
         filenames = _parse_filenames(args.filenames)
 
-        _step(6, "verifying all requested objects exist ...")
-        missing = []
+        _step(7, "verifying all requested objects exist ...")
+        missing = [f for f in filenames if f not in known_names]
         for filename in filenames:
-            object_path = f"{datatype_collection}/{filename}"
-            exists = _dataobject_exists(object_path)
-            _info(f"  - {filename}: {'FOUND' if exists else 'MISSING'}")
-            if not exists:
-                missing.append(filename)
+            _info(
+                f"  - {filename}: {'FOUND' if filename in known_names else 'MISSING'}"
+            )
         if missing:
             return _error(f"Cannot proceed; missing object(s): {', '.join(missing)}")
 
-        _step(7, "downloading requested objects ...")
+        _step(8, "downloading requested objects ...")
         for filename in filenames:
             object_path = f"{datatype_collection}/{filename}"
             cmd = f"dm_download_dataobject {shlex.quote(object_path)} {shlex.quote(str(target_dir))}"
             run_dm_cmd(dm_cmd=cmd, errormsg=f"Failed to download {filename}")
             _ok(f"Downloaded: {filename}")
     else:
-        _step(5, "no --filenames provided; full collection mode selected.")
-        _step(6, "downloading full collection ...")
+        _step(6, "no --filenames provided; full collection mode selected.")
+        _step(7, "downloading full collection ...")
         # Download the datatype collection under base_local so we get:
         # <base_local>/<datatype>/...
         # and avoid nested paths like <base_local>/<datatype>/<datatype>/...
@@ -547,16 +693,32 @@ def _run_retrieve(args):
             dm_cmd=cmd, errormsg=f"Failed to download collection {datatype_collection}"
         )
         _ok(f"Downloaded full collection: {datatype_collection}")
-        _step(7, "per-file verification skipped in full collection mode.")
+        _step(8, "per-file verification skipped in full collection mode.")
 
     if args.unspilt:
-        _step(8, "--unspilt requested; checking for tar parts to merge ...")
+        _step(9, "--unsplit requested; checking for tar parts to merge ...")
         _merge_split_tar_parts(target_dir)
     else:
-        _step(8, "--unspilt not requested; skipping merge step.")
+        _step(9, "--unsplit not requested; skipping merge step.")
 
     _ok("Retrieve workflow finished successfully.")
     return 0
+
+
+def _run_ls(args):
+    _print_hpcdme_properties()
+
+    project_path = _project_collection_path(args.projectnumber)
+    _info(f"Listing HPC-DME collection: {project_path}")
+    _info("Note: the DME search index may lag up to 60 minutes behind recent deposits.")
+
+    _step(1, f"verifying project collection exists: {project_path}")
+    if not _collection_exists(project_path):
+        return _error(f"Project collection does not exist in HPC-DME: {project_path}")
+    _ok("Project collection found.")
+
+    _step(2, "querying data objects ...")
+    return ls_collection(project_path, json_output=args.json)
 
 
 def _build_parser():
@@ -672,6 +834,29 @@ def _build_parser():
         help="Merge split parts (*.tar_0001, *.tar_0002, ...) into a tar after download",
     )
 
+    parser_ls = subparsers.add_parser(
+        "ls",
+        help="List data objects in /CCBR_Archive/GRIDFTP/Project_CCBR-<projectnumber>",
+    )
+    parser_ls.add_argument(
+        "-v",
+        "--version",
+        action="version",
+        version=f"projark is part of parkit; parkit version: {__version__}",
+    )
+    parser_ls.add_argument(
+        "projectnumber",
+        metavar="PROJECTNUMBER",
+        type=_normalize_project_number,
+        help="Project number (e.g. 982, ccbr982, CCBR-982)",
+    )
+    parser_ls.add_argument(
+        "--json",
+        action="store_true",
+        default=False,
+        help="Emit results as a JSON array instead of the tree view",
+    )
+
     return parser
 
 
@@ -687,6 +872,8 @@ def main():
             return_code = _run_deposit(args)
         elif args.command == "retrieve":
             return_code = _run_retrieve(args)
+        elif args.command == "ls":
+            return_code = _run_ls(args)
         else:
             parser.print_help()
             return_code = 1
@@ -700,14 +887,15 @@ def main():
 
     end_time = datetime.now().astimezone()
     status = "SUCCESS" if return_code == 0 else "FAILED"
-    _send_notification_email(
-        args=args,
-        status=status,
-        return_code=return_code,
-        start_time=start_time,
-        end_time=end_time,
-        error_message=error_message,
-    )
+    if args.command != "ls":
+        _send_notification_email(
+            args=args,
+            status=status,
+            return_code=return_code,
+            start_time=start_time,
+            end_time=end_time,
+            error_message=error_message,
+        )
 
     sys.exit(return_code)
 
