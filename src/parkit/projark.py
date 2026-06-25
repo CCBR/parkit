@@ -336,13 +336,25 @@ def _insert_counter(name, n):
 def _resolve_tarname(tarname, datatype_collection):
     """Return tarname unchanged if no conflict exists in HPC-DME, otherwise return
     the name with the lowest free _NNN counter inserted before the first extension.
+
+    A conflict exists when either the base tarball (e.g. ccbr982.tar) **or** its
+    first split chunk (e.g. ccbr982.tar_0001) already exists in the collection.
+    The latter covers prior deposits whose tarball was large enough to be split,
+    in which case the base name never lands in HPC-DME as a data object.
     """
-    if not _dataobject_exists(f"{datatype_collection}/{tarname}"):
+
+    def _name_is_taken(name):
+        if _dataobject_exists(f"{datatype_collection}/{name}"):
+            return True
+        first_chunk = f"{name}_0001"
+        return _dataobject_exists(f"{datatype_collection}/{first_chunk}")
+
+    if not _name_is_taken(tarname):
         _info(f"No name conflict found for {tarname!r} in HPC-DME.")
         return tarname
     for n in range(1, 1000):
         candidate = _insert_counter(tarname, n)
-        if not _dataobject_exists(f"{datatype_collection}/{candidate}"):
+        if not _name_is_taken(candidate):
             _info(
                 f"Name conflict: {tarname!r} already exists in HPC-DME. "
                 f"Using {candidate!r} instead."
