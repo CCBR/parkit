@@ -670,7 +670,9 @@ def _run_retrieve(args):
         _step(7, "verifying all requested objects exist ...")
         missing = [f for f in filenames if f not in known_names]
         for filename in filenames:
-            _info(f"  - {filename}: {'FOUND' if filename in known_names else 'MISSING'}")
+            _info(
+                f"  - {filename}: {'FOUND' if filename in known_names else 'MISSING'}"
+            )
         if missing:
             return _error(f"Cannot proceed; missing object(s): {', '.join(missing)}")
 
@@ -703,20 +705,17 @@ def _run_retrieve(args):
     return 0
 
 
+
 def _run_ls(args):
     _print_hpcdme_properties()
 
     project_path = _project_collection_path(args.projectnumber)
     _info(f"Listing HPC-DME collection: {project_path}")
-    _info(
-        "Note: the DME search index may lag up to 60 minutes behind recent deposits."
-    )
+    _info("Note: the DME search index may lag up to 60 minutes behind recent deposits.")
 
     _step(1, f"verifying project collection exists: {project_path}")
     if not _collection_exists(project_path):
-        return _error(
-            f"Project collection does not exist in HPC-DME: {project_path}"
-        )
+        return _error(f"Project collection does not exist in HPC-DME: {project_path}")
     _ok("Project collection found.")
 
     _step(2, "querying data objects ...")
