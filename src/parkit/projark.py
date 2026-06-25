@@ -701,6 +701,154 @@ def _run_retrieve(args):
     return 0
 
 
+_LS_CRITERIA = {
+    "compoundQuery": {
+        "operator": "AND",
+        "queries": [
+            {
+                "attribute": "source_file_size",
+                "value": "0",
+                "operator": "NUM_GREATER_OR_EQUAL",
+            }
+        ],
+    },
+    "detailedResponse": True,
+    "page": 1,
+    "totalCount": True,
+}
+
+
+def _query_all_dataobjects(project_path):
+    """Return a list of (absolute_path, size_bytes) for every data object under
+    *project_path*, iterating through all pages."""
+    objects = []
+    page = 1
+    while True:
+        criteria = dict(_LS_CRITERIA)
+        criteria["page"] = page
+        with NamedTemporaryFile("w", suffix=".json", delete=False) as tmp:
+            json.dump(criteria, tmp, indent=2)
+            criteria_file = tmp.name
+        try:
+            cmd = (
+                f"dm_query_dataobject -o /dev/stdout"
+                f" {shlex.quote(criteria_file)} {shlex.quote(project_path)}"
+            )
+            proc = run_dm_cmd(
+                dm_cmd=cmd,
+                errormsg="dm_query_dataobject failed during ls",
+                returnproc=True,
+                exitiffails=False,
+            )
+        finally:
+            if os.path.exists(criteria_file):
+                os.remove(criteria_file)
+
+        if proc.returncode != 0:
+            _info("dm_query_dataobject returned non-zero; no objects found or query failed.")
+            break
+
+        try:
+            data = json.loads(proc.stdout)
+        except (json.JSONDecodeError, AttributeError):
+            _info("Could not parse dm_query_dataobject output as JSON.")
+            break
+
+        page_items = data.get("dataObjects", []) or []
+        for item in page_items:
+            abs_path = (item.get("dataObject") or {}).get("absolutePath", "")
+            size = None
+            for entry in (item.get("metadataEntries") or {}).get("selfMetadataEntries", []):
+                if entry.get("attribute") == "source_file_size":
+                    try:
+                        size = int(entry["value"])
+                    except (ValueError, TypeError):
+                        pass
+                    break
+            if abs_path:
+                objects.append((abs_path, size))
+
+        total = data.get("totalCount", 0) or 0
+        limit = data.get("limit", 100) or 100
+        if page * limit >= total:
+            break
+        page += 1
+
+    return objects
+
+
+def _render_ls_tree(project_path, objects):
+    """Print a tree of *objects* grouped by their immediate parent sub-collection."""
+    # Group objects by their direct parent path (sub-collection)
+    sub_collections: dict[str, list[tuple[str, int | None]]] = {}
+    for abs_path, size in objects:
+        parent = str(Path(abs_path).parent)
+        sub_collections.setdefault(parent, []).append((abs_path, size))
+
+    # Compute sub-collection sizes (sum of known object sizes)
+    def _sub_size(items):
+        total = 0
+        for _, s in items:
+            if s is None:
+                return None
+            total += s
+        return total
+
+    # Project header — use the short name (last path component)
+    project_name = Path(project_path).name
+    total_all = sum(s for _, s in objects if s is not None) if objects else 0
+    print(f"{project_name}  ({_human_size(total_all)})")
+
+    sorted_subs = sorted(sub_collections.keys())
+    for sub_idx, sub_path in enumerate(sorted_subs):
+        is_last_sub = sub_idx == len(sorted_subs) - 1
+        sub_connector = "└──" if is_last_sub else "├──"
+        sub_name = Path(sub_path).name
+        sub_sz = _sub_size(sub_collections[sub_path])
+        sub_sz_str = f"  ({_human_size(sub_sz)})" if sub_sz is not None else ""
+        print(f"{sub_connector} {sub_name}/{sub_sz_str}")
+
+        child_prefix = "    " if is_last_sub else "│   "
+        items = sorted(sub_collections[sub_path], key=lambda x: Path(x[0]).name)
+        for item_idx, (abs_path, size) in enumerate(items):
+            is_last_item = item_idx == len(items) - 1
+            item_connector = "└──" if is_last_item else "├──"
+            fname = Path(abs_path).name
+            sz_str = _human_size(size) if size is not None else "unknown"
+            print(f"{child_prefix}{item_connector} {fname:<50}  {sz_str}")
+
+
+def _run_ls(args):
+    _print_hpcdme_properties()
+
+    project_number = args.projectnumber
+    project_path = _project_collection_path(project_number)
+    _info(f"Listing HPC-DME collection: {project_path}")
+    _info(
+        "Note: the DME search index may lag up to 60 minutes behind recent deposits."
+    )
+
+    _step(1, f"verifying project collection exists: {project_path}")
+    if not _collection_exists(project_path):
+        return _error(
+            f"Project collection does not exist in HPC-DME: {project_path}"
+        )
+    _ok("Project collection found.")
+
+    _step(2, "querying data objects ...")
+    objects = _query_all_dataobjects(project_path)
+    _ok(f"{len(objects)} object(s) found.")
+
+    if not objects:
+        _info("No data objects found under this project collection.")
+        return 0
+
+    print()
+    _render_ls_tree(project_path, objects)
+    print()
+    return 0
+
+
 def _build_parser():
     parser = argparse.ArgumentParser(
         description="projark: project archival helper built on parkit"
@@ -814,6 +962,23 @@ def _build_parser():
         help="Merge split parts (*.tar_0001, *.tar_0002, ...) into a tar after download",
     )
 
+    parser_ls = subparsers.add_parser(
+        "ls",
+        help="List data objects in /CCBR_Archive/GRIDFTP/Project_CCBR-<projectnumber>",
+    )
+    parser_ls.add_argument(
+        "-v",
+        "--version",
+        action="version",
+        version=f"projark is part of parkit; parkit version: {__version__}",
+    )
+    parser_ls.add_argument(
+        "projectnumber",
+        metavar="PROJECTNUMBER",
+        type=_normalize_project_number,
+        help="Project number (e.g. 982, ccbr982, CCBR-982)",
+    )
+
     return parser
 
 
@@ -829,6 +994,8 @@ def main():
             return_code = _run_deposit(args)
         elif args.command == "retrieve":
             return_code = _run_retrieve(args)
+        elif args.command == "ls":
+            return_code = _run_ls(args)
         else:
             parser.print_help()
             return_code = 1
