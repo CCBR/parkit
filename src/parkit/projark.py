@@ -657,30 +657,42 @@ def _run_retrieve(args):
     target_dir.mkdir(parents=True, exist_ok=True)
     _step(4, f"local download directory: {target_dir}")
 
+    # Fetch the full object listing once — used for existence checks and split
+    # detection, replacing N serial dm_get_dataobject calls with a single query.
+    _step(5, "fetching object listing from HPC-DME ...")
+    all_objects = _query_all_dataobjects(datatype_collection)
+    known_names = {Path(p).name for p, _s, _d, _dt in all_objects}
+    _info(f"{len(known_names)} object(s) found in {datatype_collection}.")
+
+    # Detect split tar parts and warn/auto-set unsplit
+    split_names = {n for n in known_names if re.search(r"\.tar_\d{4}$", n)}
+    if split_names and not args.unspilt:
+        _info(
+            "Split tar parts detected in the collection "
+            f"({', '.join(sorted(split_names))}). "
+            "Pass --unsplit to automatically merge them after download."
+        )
+
     if args.filenames:
-        _step(5, "parsing requested filenames ...")
+        _step(6, "parsing requested filenames ...")
         filenames = _parse_filenames(args.filenames)
 
-        _step(6, "verifying all requested objects exist ...")
-        missing = []
+        _step(7, "verifying all requested objects exist ...")
+        missing = [f for f in filenames if f not in known_names]
         for filename in filenames:
-            object_path = f"{datatype_collection}/{filename}"
-            exists = _dataobject_exists(object_path)
-            _info(f"  - {filename}: {'FOUND' if exists else 'MISSING'}")
-            if not exists:
-                missing.append(filename)
+            _info(f"  - {filename}: {'FOUND' if filename in known_names else 'MISSING'}")
         if missing:
             return _error(f"Cannot proceed; missing object(s): {', '.join(missing)}")
 
-        _step(7, "downloading requested objects ...")
+        _step(8, "downloading requested objects ...")
         for filename in filenames:
             object_path = f"{datatype_collection}/{filename}"
             cmd = f"dm_download_dataobject {shlex.quote(object_path)} {shlex.quote(str(target_dir))}"
             run_dm_cmd(dm_cmd=cmd, errormsg=f"Failed to download {filename}")
             _ok(f"Downloaded: {filename}")
     else:
-        _step(5, "no --filenames provided; full collection mode selected.")
-        _step(6, "downloading full collection ...")
+        _step(6, "no --filenames provided; full collection mode selected.")
+        _step(7, "downloading full collection ...")
         # Download the datatype collection under base_local so we get:
         # <base_local>/<datatype>/...
         # and avoid nested paths like <base_local>/<datatype>/<datatype>/...
@@ -689,13 +701,13 @@ def _run_retrieve(args):
             dm_cmd=cmd, errormsg=f"Failed to download collection {datatype_collection}"
         )
         _ok(f"Downloaded full collection: {datatype_collection}")
-        _step(7, "per-file verification skipped in full collection mode.")
+        _step(8, "per-file verification skipped in full collection mode.")
 
     if args.unspilt:
-        _step(8, "--unspilt requested; checking for tar parts to merge ...")
+        _step(9, "--unspilt requested; checking for tar parts to merge ...")
         _merge_split_tar_parts(target_dir)
     else:
-        _step(8, "--unspilt not requested; skipping merge step.")
+        _step(9, "--unspilt not requested; skipping merge step.")
 
     _ok("Retrieve workflow finished successfully.")
     return 0
