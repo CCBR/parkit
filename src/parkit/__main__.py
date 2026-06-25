@@ -195,11 +195,11 @@ def main():
     elif args.command == "syncapi":
         syncapi(args.repo)
     elif args.command == "ls":
-        print(
-            "Note: DME search index may lag up to 60 minutes behind recent deposits."
-        )
+        print("Note: DME search index may lag up to 60 minutes behind recent deposits.")
         if not collection_exists(args.collection_path):
-            print(f"ERROR: Collection does not exist in HPC-DME: {args.collection_path}")
+            print(
+                f"ERROR: Collection does not exist in HPC-DME: {args.collection_path}"
+            )
             sys.exit(1)
         sys.exit(ls_collection(args.collection_path, json_output=args.json))
     for f in files_created:

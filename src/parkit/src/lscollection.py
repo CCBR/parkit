@@ -86,7 +86,9 @@ def query_all_dataobjects(collection_path):
                 os.remove(criteria_file)
 
         if proc.returncode != 0:
-            print("dm_query_dataobject returned non-zero; no objects found or query failed.")
+            print(
+                "dm_query_dataobject returned non-zero; no objects found or query failed."
+            )
             break
 
         try:
@@ -102,7 +104,9 @@ def query_all_dataobjects(collection_path):
             depositor_name = None
             depositor_id = None
             deposit_date = None
-            for entry in (item.get("metadataEntries") or {}).get("selfMetadataEntries", []):
+            for entry in (item.get("metadataEntries") or {}).get(
+                "selfMetadataEntries", []
+            ):
                 attr = entry.get("attribute")
                 if attr == "source_file_size":
                     try:
@@ -140,7 +144,7 @@ def _build_tree(collection_path, objects):
     for abs_path, size, depositor, deposit_date in objects:
         if not abs_path.startswith(prefix):
             continue
-        rel = abs_path[len(prefix):]
+        rel = abs_path[len(prefix) :]
         parts = rel.split("/")
         node = root
         for part in parts[:-1]:
@@ -180,12 +184,12 @@ def _render_node(node, prefix, is_last, label, indent):
     total_children = len(subdirs) + len(files)
 
     for idx, subdir in enumerate(subdirs):
-        is_last_child = (idx == total_children - 1)
+        is_last_child = idx == total_children - 1
         _render_node(node[subdir], prefix, is_last_child, subdir, child_indent)
 
     for idx, (fname, _path, size, depositor, deposit_date) in enumerate(files):
         item_idx = len(subdirs) + idx
-        is_last_item = (item_idx == total_children - 1)
+        is_last_item = item_idx == total_children - 1
         item_connector = "└──" if is_last_item else "├──"
         sz_str = human_size(size) if size is not None else "unknown"
         dep_col = ",".join(filter(None, [depositor, deposit_date])) or ""
@@ -205,12 +209,12 @@ def render_ls_tree(collection_path, objects):
     total_top = len(subdirs) + len(files)
 
     for idx, subdir in enumerate(subdirs):
-        is_last = (idx == total_top - 1)
+        is_last = idx == total_top - 1
         _render_node(root[subdir], collection_path, is_last, subdir, "")
 
     for idx, (fname, _path, size, depositor, deposit_date) in enumerate(files):
         item_idx = len(subdirs) + idx
-        is_last = (item_idx == total_top - 1)
+        is_last = item_idx == total_top - 1
         connector = "└──" if is_last else "├──"
         sz_str = human_size(size) if size is not None else "unknown"
         dep_col = ",".join(filter(None, [depositor, deposit_date])) or ""
@@ -221,13 +225,15 @@ def render_ls_json(objects):
     """Print *objects* as a JSON array to stdout."""
     records = []
     for abs_path, size, depositor, deposit_date in objects:
-        records.append({
-            "path": abs_path,
-            "size_bytes": size,
-            "size_human": human_size(size) if size is not None else None,
-            "depositor": depositor,
-            "deposit_date": deposit_date,
-        })
+        records.append(
+            {
+                "path": abs_path,
+                "size_bytes": size,
+                "size_human": human_size(size) if size is not None else None,
+                "depositor": depositor,
+                "deposit_date": deposit_date,
+            }
+        )
     print(json.dumps(records, indent=2))
 
 

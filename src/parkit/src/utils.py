@@ -155,6 +155,7 @@ def human_size(num_bytes):
 def collection_exists(collection_path):
     """Return True if *collection_path* exists as a collection in HPC-DME."""
     import shlex
+
     cmd = f"dm_get_collection {shlex.quote(collection_path)}"
     proc = run_dm_cmd(
         dm_cmd=cmd,

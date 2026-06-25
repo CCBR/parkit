@@ -705,7 +705,6 @@ def _run_retrieve(args):
     return 0
 
 
-
 def _run_ls(args):
     _print_hpcdme_properties()
 
