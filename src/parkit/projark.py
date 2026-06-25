@@ -718,9 +718,28 @@ _LS_CRITERIA = {
 }
 
 
+def _parse_deposit_date(raw_value):
+    """Parse data_transfer_completed (e.g. '06-25-2026 01:30:16') → 'YYMMDD'.
+    Returns None if the value cannot be parsed.
+    """
+    if not raw_value:
+        return None
+    for fmt in ("%m-%d-%Y %H:%M:%S", "%m-%d-%Y"):
+        try:
+            return datetime.strptime(str(raw_value).strip(), fmt).strftime("%y%m%d")
+        except ValueError:
+            pass
+    return None
+
+
 def _query_all_dataobjects(project_path):
-    """Return a list of (absolute_path, size_bytes) for every data object under
-    *project_path*, iterating through all pages."""
+    """Return a list of (absolute_path, size_bytes, depositor, deposit_date) for
+    every data object under *project_path*, iterating through all pages.
+
+    *depositor* is the display name of the registering user (registered_by_name)
+    falling back to their userid (registered_by), or None if unavailable.
+    *deposit_date* is data_transfer_completed formatted as YYMMDD, or None.
+    """
     objects = []
     page = 1
     while True:
@@ -758,15 +777,25 @@ def _query_all_dataobjects(project_path):
         for item in page_items:
             abs_path = (item.get("dataObject") or {}).get("absolutePath", "")
             size = None
+            depositor_name = None
+            depositor_id = None
+            deposit_date = None
             for entry in (item.get("metadataEntries") or {}).get("selfMetadataEntries", []):
-                if entry.get("attribute") == "source_file_size":
+                attr = entry.get("attribute")
+                if attr == "source_file_size":
                     try:
                         size = int(entry["value"])
                     except (ValueError, TypeError):
                         pass
-                    break
+                elif attr == "registered_by_name":
+                    depositor_name = str(entry["value"]).strip() or None
+                elif attr == "registered_by":
+                    depositor_id = str(entry["value"]).strip() or None
+                elif attr == "data_transfer_completed":
+                    deposit_date = _parse_deposit_date(entry["value"])
+            depositor = depositor_name or depositor_id
             if abs_path:
-                objects.append((abs_path, size))
+                objects.append((abs_path, size, depositor, deposit_date))
 
         total = data.get("totalCount", 0) or 0
         limit = data.get("limit", 100) or 100
@@ -780,15 +809,15 @@ def _query_all_dataobjects(project_path):
 def _render_ls_tree(project_path, objects):
     """Print a tree of *objects* grouped by their immediate parent sub-collection."""
     # Group objects by their direct parent path (sub-collection)
-    sub_collections: dict[str, list[tuple[str, int | None]]] = {}
-    for abs_path, size in objects:
+    sub_collections: dict[str, list[tuple[str, int | None, str | None, str | None]]] = {}
+    for abs_path, size, depositor, deposit_date in objects:
         parent = str(Path(abs_path).parent)
-        sub_collections.setdefault(parent, []).append((abs_path, size))
+        sub_collections.setdefault(parent, []).append((abs_path, size, depositor, deposit_date))
 
     # Compute sub-collection sizes (sum of known object sizes)
     def _sub_size(items):
         total = 0
-        for _, s in items:
+        for _, s, _d, _dt in items:
             if s is None:
                 return None
             total += s
@@ -796,7 +825,7 @@ def _render_ls_tree(project_path, objects):
 
     # Project header — use the short name (last path component)
     project_name = Path(project_path).name
-    total_all = sum(s for _, s in objects if s is not None) if objects else 0
+    total_all = sum(s for _, s, _d, _dt in objects if s is not None) if objects else 0
     print(f"{project_name}  ({_human_size(total_all)})")
 
     sorted_subs = sorted(sub_collections.keys())
@@ -810,12 +839,13 @@ def _render_ls_tree(project_path, objects):
 
         child_prefix = "    " if is_last_sub else "│   "
         items = sorted(sub_collections[sub_path], key=lambda x: Path(x[0]).name)
-        for item_idx, (abs_path, size) in enumerate(items):
+        for item_idx, (abs_path, size, depositor, deposit_date) in enumerate(items):
             is_last_item = item_idx == len(items) - 1
             item_connector = "└──" if is_last_item else "├──"
             fname = Path(abs_path).name
             sz_str = _human_size(size) if size is not None else "unknown"
-            print(f"{child_prefix}{item_connector} {fname:<50}  {sz_str}")
+            dep_col = ",".join(filter(None, [depositor, deposit_date])) or ""
+            print(f"{child_prefix}{item_connector} {fname:<50}  {sz_str:<12}  {dep_col}")
 
 
 def _run_ls(args):
