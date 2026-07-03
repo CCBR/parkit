@@ -11,10 +11,10 @@ parkit ls <COLLECTION_PATH> --json
 
 ## Inputs
 
-| Argument | Type | Description |
-|----------|------|-------------|
-| `COLLECTION_PATH` | positional (required) | Full HPC-DME collection path |
-| `--json` | flag | Emit results as a JSON array instead of the tree view |
+| Argument          | Type                  | Description                                           |
+| ----------------- | --------------------- | ----------------------------------------------------- |
+| `COLLECTION_PATH` | positional (required) | Full HPC-DME collection path                          |
+| `--json`          | flag                  | Emit results as a JSON array instead of the tree view |
 
 ## Examples
 
