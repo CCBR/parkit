@@ -165,16 +165,33 @@ options:
   -h, --help            show this help message and exit
 ```
 
+### HPC_DME_APIs releases
+
+`CBIIT/HPC_DME_APIs` no longer publishes GitHub tags or releases. Each release lives on a `releases/X.Y.Z` branch, and a release counts as **stable** once that branch is merged into `master`. Newer `releases/*` branches that are not merged yet are still in development.
+
+By default, `checkapisync` and `syncapi` target the **latest stable release**: the highest-numbered `releases/X.Y.Z` branch merged into `master`. Versions are compared numerically (`3.10.0` > `3.9.0`), and names that are not exactly `releases/X.Y.Z` (for example `releases/1.5.2-candidate`) are ignored.
+
+To use a different tag or branch, pass `--ref` or set `HPC_DME_APIs_REF` (also honored by the `projark` sync check). `X.Y.Z` is shorthand for `releases/X.Y.Z`:
+
+```bash
+parkit syncapi --ref 3.31.0          # releases/3.31.0
+export HPC_DME_APIs_REF=3.31.0       # pin for syncapi, checkapisync and projark
+```
+
+Repo resolution order (both commands):
+
+1. `--repo /path/to/HPC_DME_APIs`
+2. `HPC_DME_APIs` environment variable
+3. Parent directory of `HPC_DM_UTILS` (if it ends with `utils`)
+
 ### `parkit checkapisync`
 
-Check whether your local `HPC_DME_APIs` git repository is synchronized with its upstream remote.
+Check whether your local `HPC_DME_APIs` clone is at the target ref (latest stable release, or `--ref`/`HPC_DME_APIs_REF`).
 
-- Repo resolution order:
-  1. `HPC_DME_APIs` environment variable
-  2. Parent directory of `HPC_DM_UTILS` (if it ends with `utils`)
-  3. Fallback path: `/data/kopardevn/SandBox/HPC_DME_APIs`
-- Optional override:
-  - `parkit checkapisync --repo /path/to/HPC_DME_APIs`
+- Fetches `master` and all `releases/*` branches (or only the requested ref); your checkout is not changed.
+- In sync when `HEAD` is at the target commit (or has identical content).
+- Unless a ref is pinned, a local release **newer** than the latest stable release is also accepted, so you are never pushed to downgrade.
+- Exit codes: `0` in sync, `1` out of sync, `2` configuration error (repo not found, unknown ref).
 
 Example:
 
@@ -185,28 +202,33 @@ parkit checkapisync
 Output:
 
 ```text
-WARNING:HPC_DM_JAVA_VERSION is not set, setting it to 23.0.2
-WARNING:If you need a different version, please set it explicitly in your environment.
-HPC_DME_APIs=/data/kopardevn/GitRepos/HPC_DME_APIs
-branch=master
-local=08a93b22a74bb51455489b70bcc36ea528c74d23
-remote=9d01b7b6686266707c9720285aecefd4f46323f3
-base=dabfe0a5789ba89a1f17f1c0868eaad284f0b62a
-OUT OF SYNC: local and upstream have diverged.
+HPC_DME_APIs=/data/$USER/HPC_DME_APIs
+branch=releases/3.27.0
+local=ebbdd298b24bd96fce306fd4d895edd563d2aa14
+local_release=3.27.0
+target=releases/3.30.1 (latest stable release, branch)
+target_sha=83222692c7e9fdbecd57731a6aeb96fae34bb519
+target_release=3.30.1
+OUT OF SYNC: local release 3.27.0 is older than releases/3.30.1. Run 'parkit syncapi' to update.
 ```
 
 ### `parkit syncapi`
 
-Sync local `HPC_DME_APIs` and generate a fresh API token.
-You can also use this command just to generate/refresh a new token (even if git is already up to date).
+Move your local `HPC_DME_APIs` clone to the target ref and generate a fresh API token.
+You can also use this command just to refresh your token when the repo is already at the target.
 
 What it does:
 
-- resolves `HPC_DME_APIs` repo path
-- runs `git pull`
-- runs `source <repo>/functions && dm_generate_token`
-- prompts for password/token input interactively in your terminal
-- prints success message on completion
+1. Resolves the repo and the target ref (latest stable release, or `--ref`/`HPC_DME_APIs_REF`).
+2. Moves the clone to the target without creating merge commits:
+   - branch: checks out a local branch of the same name tracking `origin`, fast-forwarding it if it already exists
+   - tag: checks out the tag commit (detached `HEAD`)
+   - never downgrades automatically: if your local release is newer than the latest stable release, the repo is left as is; an explicit `--ref` may downgrade (with a warning)
+   - aborts if tracked files have uncommitted changes, or if the local branch has commits not on `origin`; untracked/ignored files such as `utils/hpcdme.properties` are kept
+3. Verifies `HEAD` is at the target commit and warns if `utils/version` names a different hpc-cli major.minor.
+4. Runs `source <repo>/utils/functions && dm_generate_token`, prompting for your password.
+
+Exit codes: `0` success, `1` sync or token failure, `2` configuration error.
 
 Example:
 
@@ -217,44 +239,21 @@ parkit syncapi
 Output:
 
 ```text
-HPC_DME_APIs=/data/kopardevn/GitRepos/HPC_DME_APIs
-... git pull output ...
-... dm_generate_token prompts for password ...
+syncapi: starting HPC_DME_APIs sync and token refresh
+HPC_DME_APIs=/data/$USER/HPC_DME_APIs
+syncapi: [1/4] fetching release branches and resolving target ...
+syncapi: target is releases/3.30.1 (latest stable release, branch)
+syncapi: [2/4] moving local repo to target ...
+syncapi: local releases/3.27.0 (release 3.27.0) -> target releases/3.30.1 (release 3.30.1)
+syncapi: now at releases/3.30.1 (83222692c7).
+syncapi: [3/4] locating HPC_DME_APIs functions file ...
+syncapi: [4/4] generating a fresh token via dm_generate_token ...
+syncapi: interactive prompt expected; enter your host password when asked.
+Enter host password for user '<username>':
 Now you are in sync and ready to run other parkit commands.
 ```
 
-Example failure and interpretation:
-
-```bash
-parkit syncapi
-```
-
-Output:
-
-```text
-WARNING:HPC_DM_JAVA_VERSION is not set, setting it to 23.0.2
-WARNING:If you need a different version, please set it explicitly in your environment.
-HPC_DME_APIs=/data/kopardevn/GitRepos/HPC_DME_APIs
-Merge made by the 'recursive' strategy.
- .github/workflows/build-deploy-api.yml | 8 ++++++--
- .github/workflows/build-dev-api.yml    | 4 +++-
- .github/workflows/deploy-dev-api.yml   | 4 +++-
- 3 files changed, 12 insertions(+), 4 deletions(-)
-Enter host password for user 'kopardevn':
-  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
-                                 Dload  Upload   Total   Spent    Left  Speed
-100  6065    0  6065    0     0  49713      0 --:--:-- --:--:-- --:--:-- 49713
-ERROR: No token found in /data/kopardevn/GitRepos/HPC_DME_APIs/utils/temp/log
-ERROR MESSAGE: Access Denied: LDAP authentication failed
-syncapi failed: dm_generate_token was not successful.
-```
-
-What this means:
-
-- `git pull` succeeded (your local API repo updated).
-- Token generation failed at authentication time (`LDAP authentication failed`).
-- You are synced to latest code, but not ready for data operations until token generation succeeds.
-- Re-run `parkit syncapi` and enter valid credentials; if it still fails, inspect `HPC_DME_APIs/utils/temp/log`.
+If token generation fails (for example `ERROR MESSAGE: Access Denied: LDAP authentication failed`), the repo has already been moved to the target, but you are not ready for data operations until a token is generated. Re-run `parkit syncapi` with valid credentials; if it still fails, inspect `HPC_DME_APIs/utils/temp/log`.
 
 ### Example:
 

@@ -44,12 +44,23 @@ def main():
     # Create a subcommand for "checkapisync"
     parser_checkapisync = subparsers.add_parser(
         "checkapisync",
-        help="check whether the HPC_DME_APIs repository is in sync with upstream",
+        help="check whether HPC_DME_APIs is at its latest stable release (or --ref)",
     )
     parser_checkapisync.add_argument(
         "--repo",
         type=str,
-        help="optional path to HPC_DME_APIs repository (overrides env/fallback)",
+        help="optional path to HPC_DME_APIs repository (overrides env vars)",
+        required=False,
+        default="",
+    )
+    parser_checkapisync.add_argument(
+        "--ref",
+        type=str,
+        help=(
+            "tag or branch of HPC_DME_APIs to compare against (e.g. releases/3.31.0, "
+            "3.31.0, or a tag); defaults to $HPC_DME_APIs_REF, else the latest "
+            "releases/X.Y.Z branch merged into master"
+        ),
         required=False,
         default="",
     )
@@ -57,12 +68,23 @@ def main():
     # Create a subcommand for "syncapi"
     parser_syncapi = subparsers.add_parser(
         "syncapi",
-        help="sync HPC_DME_APIs with upstream and generate a fresh token",
+        help="move HPC_DME_APIs to its latest stable release (or --ref) and generate a fresh token",
     )
     parser_syncapi.add_argument(
         "--repo",
         type=str,
-        help="optional path to HPC_DME_APIs repository (overrides env/fallback)",
+        help="optional path to HPC_DME_APIs repository (overrides env vars)",
+        required=False,
+        default="",
+    )
+    parser_syncapi.add_argument(
+        "--ref",
+        type=str,
+        help=(
+            "tag or branch of HPC_DME_APIs to sync to (e.g. releases/3.31.0, "
+            "3.31.0, or a tag); defaults to $HPC_DME_APIs_REF, else the latest "
+            "releases/X.Y.Z branch merged into master"
+        ),
         required=False,
         default="",
     )
@@ -191,9 +213,9 @@ def main():
             args.tarball, args.dest, args.collectiontype
         )
     elif args.command == "checkapisync":
-        check_hpc_dme_apis_sync(args.repo)
+        sys.exit(check_hpc_dme_apis_sync(args.repo, args.ref))
     elif args.command == "syncapi":
-        syncapi(args.repo)
+        sys.exit(syncapi(args.repo, args.ref))
     elif args.command == "ls":
         print("Note: DME search index may lag up to 60 minutes behind recent deposits.")
         if not collection_exists(args.collection_path):
