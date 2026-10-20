@@ -1,4 +1,4 @@
-## parkit development version
+## parkit 3.2.0
 
 - `parkit syncapi` and `parkit checkapisync` now track HPC_DME_APIs releases, which are published as `releases/X.Y.Z` branches instead of GitHub tags/releases (#68, #69, @kopardev):
   - The default target is the latest stable release: the highest-numbered `releases/X.Y.Z` branch merged into `master`, compared numerically. Malformed names (e.g. `releases/1.5.2-candidate`) are ignored.
