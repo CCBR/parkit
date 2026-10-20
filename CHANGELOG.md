@@ -1,5 +1,7 @@
 ## parkit development version
 
+- Refreshed the `parkit --help` output in `README.md` (adds `ls`, `-v/--version`, and the new `checkapisync`/`syncapi` descriptions) and listed `ls` in the `parkit` CLI overview docs. (#71, @kopardev)
+
 ## parkit 3.2.0
 
 - `parkit syncapi` and `parkit checkapisync` now track HPC_DME_APIs releases, which are published as `releases/X.Y.Z` branches instead of GitHub tags/releases (#68, #69, @kopardev):
