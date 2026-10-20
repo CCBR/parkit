@@ -7,3 +7,6 @@ results/
 *.code-workspace
 assets/*.html
 _extensions
+
+# MkDocs admonitions need indented bodies, which prettier strips
+docs/workflows/projark-ls-workflow.md
