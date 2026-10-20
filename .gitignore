@@ -16,3 +16,4 @@ build/
 **/createmetadata.*.err
 **/createemptycollection.*.err
 **/createemptycollection.*.out
+.vscode/
