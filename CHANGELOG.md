@@ -1,5 +1,12 @@
 ## parkit development version
 
+- `parkit syncapi` and `parkit checkapisync` now track HPC_DME_APIs releases, which are published as `releases/X.Y.Z` branches instead of GitHub tags/releases (#68, #69, @kopardev):
+  - The default target is the latest stable release: the highest-numbered `releases/X.Y.Z` branch merged into `master`, compared numerically. Malformed names (e.g. `releases/1.5.2-candidate`) are ignored.
+  - New `--ref` option (and `HPC_DME_APIs_REF` env var, also used by the `projark` sync check) to target a specific tag or branch; `X.Y.Z` is shorthand for `releases/X.Y.Z`.
+  - `syncapi` switches to the target branch (or tag) instead of running `git pull`, never creates merge commits, never downgrades automatically, and aborts on uncommitted tracked changes or local-only commits.
+  - `checkapisync` reports the local and target release and no longer reports a clone stuck on an old release branch as in sync.
+  - Both commands now return meaningful exit codes (`0` ok, `1` out of sync/failure, `2` configuration error).
+- Removed the hard-coded personal fallback path for the HPC_DME_APIs repository; set `HPC_DM_UTILS`, `HPC_DME_APIs`, or pass `--repo`. (#68, #69, @kopardev)
 - Fixed the `mamba activate` path in `README.md` and the Getting Started docs to point to the current `parkit_3` environment. (#67, @kopardev)
 
 ## v3.1.0
