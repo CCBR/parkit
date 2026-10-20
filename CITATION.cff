@@ -18,9 +18,5 @@ url: https://ccbr.github.io/parkit/
 repository-code: https://github.com/CCBR/parkit
 license: MIT
 type: software
-# identifiers:
-#   - description: Archived snapshots of all versions
-#     type: doi
-#     value: 10.5281/zenodo.13377166
-version: v2.2.0
-date-released: "2025-07-12"
+version: v3.2.0
+date-released: "2026-10-20"
