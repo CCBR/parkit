@@ -107,7 +107,7 @@ Runtime logging and notifications:
 - On helix or biowulf you can get access to `parkit` by loading the appropriate mamba env
 
 ```bash
-mamba activate /vf/users/CCBR_Pipeliner/db/PipeDB/miniforge3/envs/parkit
+mamba activate /vf/users/CCBR_Pipeliner/db/PipeDB/miniforge3/envs/parkit_3
 ```
 
 - `HPC_DME_APIs` package needs to be cloned and set up correctly. Follow this setup guide: https://ccbr.github.io/HowTos/docs/HPCDME/setup.html
@@ -119,7 +119,7 @@ mamba activate /vf/users/CCBR_Pipeliner/db/PipeDB/miniforge3/envs/parkit
 - Run all operations from `tmux`, `screen`, or an Open OnDemand graphical session.
 - Disclaimer: Open OnDemand is currently available only on Biowulf compute nodes, not directly on Helix. Since `projark` is Helix-only today, use `tmux`/`screen` on Helix; Open OnDemand support is future-facing until Helix access is available.
 
-- If `mamba` is not already in your `PATH`, add the following block to your `~/.bashrc` or `~/.zshrc`, then run `mamba activate /vf/users/CCBR_Pipeliner/db/PipeDB/miniforge3/envs/parkit`:
+- If `mamba` is not already in your `PATH`, add the following block to your `~/.bashrc` or `~/.zshrc`, then run `mamba activate /vf/users/CCBR_Pipeliner/db/PipeDB/miniforge3/envs/parkit_3`:
 
 ```bash
 # >>> mamba initialize >>>
