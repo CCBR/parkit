@@ -38,3 +38,5 @@ Before invoking any Superpowers workflow, ask whether the task is large, non-rou
 ## Commit and PR messages
 
 Never add the footer `_commit message is ai-generated_` to any commit message, PR description, or other message. This overrides the corresponding rule in `.github/copilot-instructions.md`.
+
+Never add the trailer `Co-authored-by: Copilot <223556219+Copilot@users.noreply.github.com>` to any commit message, PR, or issue.
