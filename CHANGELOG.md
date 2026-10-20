@@ -12,6 +12,10 @@
   - No Helix, tmux, or sync-gate checks required (read-only operation).
   - Prints a note that newly deposited files may not appear for up to 60 minutes (DME search index lag).
   - Does not send a completion email.
+- Added `parkit ls <COLLECTION_PATH>` subcommand to list data objects under any HPC-DME collection path (e.g. `parkit ls /CCBR_Archive/GRIDFTP/Project_CCBR-982`), sharing its listing backend with `projark ls`. (#62, @kopardev)
+- Added `--json` flag to `parkit ls` and `projark ls` to emit results as a JSON array instead of the tree view. (#62, @kopardev)
+- Fixed the `ls` tree view to render the full collection hierarchy at any depth, so listings such as `parkit ls /CCBR_Archive/GRIDFTP` no longer collapse intermediate `Project_CCBR-*` folders into duplicated `Analysis/`/`Rawdata/` labels. (#62, @kopardev)
+- Fixed `projark retrieve` step messages that printed `--unspilt` instead of `--unsplit`. (#62, @kopardev)
 - Fixed `projark deposit` name-conflict detection to also check for the first split-chunk suffix (`*.tar_0001`) when testing whether a base tar name is already taken in HPC-DME. Previously, a project whose tarball was split on a prior deposit (producing `ccbr982.tar_0001`, `ccbr982.tar_0002`, …) would not be detected as a conflict because the base name `ccbr982.tar` never exists as a data object. (#61, @kopardev)
 - Improved `projark retrieve` (#62, @kopardev):
   - Replaced N serial `dm_get_dataobject` existence checks (one per `--filenames` entry) with a single `dm_query_dataobject` call; all requested filenames are validated against the returned in-memory name set.
@@ -25,6 +29,7 @@
 - After Step 2 in `projark deposit`, print the active (non-comment) lines from `$HPC_DM_UTILS/hpcdme.properties` with a 4-space indent so users can verify their HPC-DME configuration before the transfer begins. (#56, @kopardev)
 - After Step 2 in `projark deposit`, check that proxy settings (`hpc.server.proxy.url`, `hpc.server.proxy.port`) are commented out in `hpcdme.properties`; abort with a descriptive error if any are active. Per HPC-DME team guidance (Udit Sehgal), proxy lines must not be set. (#57, @kopardev)
 - Exclude dot files (filenames starting with `.`) from `dm_register_directory` during deposit by passing a temp exclude file with patterns `.*` and `**/.*` via the `-e` flag. Prevents hidden files such as shell per-directory history files from being registered to HPC-DME. (#58, @kopardev)
+- Fixed the documentation site version selector by deploying versioned docs with `mike`, and added the parkit favicon and logo. (#51, @kopardev)
 - Before `dm_register_directory`, check whether any staged file already exists in the destination HPC-DME collection; if so, rename all staged files (primary and `.md5`) by inserting a zero-padded counter before the first extension (e.g. `ccbr1431.tar` → `ccbr1431_001.tar`), using the lowest available counter so previous deposits are never overwritten. (#59, @kopardev)
 
 ## v3.0.1
