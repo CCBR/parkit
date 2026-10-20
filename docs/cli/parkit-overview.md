@@ -17,6 +17,7 @@ Core subcommands:
 - `deposittar`
 - `checkapisync`
 - `syncapi`
+- `ls`
 
 ## When To Use `parkit` Directly
 

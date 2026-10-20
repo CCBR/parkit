@@ -145,24 +145,32 @@ parkit --help
 Output:
 
 ```text
-usage: parkit [-h] {createtar,tarprep,checkapisync,syncapi,createmetadata,createemptycollection,deposittar} ...
+usage: parkit [-h] [-v]
+              {createtar,tarprep,checkapisync,syncapi,createmetadata,createemptycollection,deposittar,ls}
+              ...
 
 parkit subcommands to park data in HPCDME
 
 positional arguments:
-  {createtar,tarprep,checkapisync,syncapi,createmetadata,createemptycollection,deposittar}
+  {createtar,tarprep,checkapisync,syncapi,createmetadata,createemptycollection,deposittar,ls}
                         Subcommand to run
-    createtar           create tarball(and its filelist) from a project folder.
+    createtar           create tarball(and its filelist) from a project
+                        folder.
     tarprep             prepare tarball for upload.
-    checkapisync        check whether the HPC_DME_APIs repository is in sync with upstream
-    syncapi             sync HPC_DME_APIs with upstream and generate a fresh token
-    createmetadata      create the metadata.json file required for a tarball (and its filelist)
+    checkapisync        check whether HPC_DME_APIs is at its latest stable
+                        release (or --ref)
+    syncapi             move HPC_DME_APIs to its latest stable release (or
+                        --ref) and generate a fresh token
+    createmetadata      create the metadata.json file required for a tarball
+                        (and its filelist)
     createemptycollection
                         creates empty project and analysis collections
     deposittar          deposit tarball(and filelist) into vault
+    ls                  list data objects under any HPC-DME collection path
 
 options:
   -h, --help            show this help message and exit
+  -v, --version         show program's version number and exit
 ```
 
 ### HPC_DME_APIs releases
