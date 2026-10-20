@@ -2,6 +2,7 @@
 <!-- superpowers version: v6.4.2 -->
 <!-- vscode_ghcopilot_superpowers commit: 550a4d5 -->
 <!-- generated_at: 2026-10-20T21:51:59Z -->
+
 ## CCBR Superpowers integration
 
 Approved Superpowers skills may be available as personal Agent Skills under `~/.claude/skills/`. The local installation is managed separately. This repository policy determines whether a skill should be invoked; discovery alone never requires its use. Once deliberately selected, follow the chosen skill's workflow.
@@ -31,4 +32,5 @@ Prefer direct execution for routine or tightly coupled work. Dispatch subagents 
 **Do NOT use the Superpowers TDD workflow by default.** Reserve it for substantial behavioral changes, complex business or scientific logic, critical shared code, meaningful regression risk, or an explicit user request. Documentation, formatting, simple configuration, obvious bug fixes, minor refactors, and routine maintenance need only the minimum targeted validation appropriate to the change.
 
 Before invoking any Superpowers workflow, ask whether the task is large, non-routine, ambiguous, or potentially code-breaking; whether the workflow will materially improve correctness or reduce risk; and whether that benefit is proportional to its cost. If not, work directly.
+
 <!-- CCBR-SUPERPOWERS-END -->
