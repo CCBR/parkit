@@ -1,5 +1,7 @@
 ## parkit development version
 
+- Fixed the `mamba activate` path in `README.md` and the Getting Started docs to point to the current `parkit_3` environment. (#67, @kopardev)
+
 ## v3.1.0
 
 - Added `projark ls <projectnumber>` subcommand to list all data objects in a project's HPC-DME vault collection as a tree with human-readable sizes, depositor name, and deposit date (#62, @kopardev):
