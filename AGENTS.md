@@ -40,3 +40,11 @@ Before invoking any Superpowers workflow, ask whether the task is large, non-rou
 Never add the footer `_commit message is ai-generated_` to any commit message, PR description, or other message. This overrides the corresponding rule in `.github/copilot-instructions.md`.
 
 Never add the trailer `Co-authored-by: Copilot <223556219+Copilot@users.noreply.github.com>` to any commit message, PR, or issue.
+
+For AI-assisted commits, PRs, and issues, end the message with this footnote as its final line, separated from the preceding text by a blank line:
+
+```text
+⚡ Generated using AI ⚡
+```
+
+This replaces the plain `Generated using AI` and italic `_Generated using AI_` lines required by `.github/copilot-instructions.md`.
