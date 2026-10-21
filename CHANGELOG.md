@@ -1,4 +1,4 @@
-## parkit development version
+## parkit 3.3.0
 
 - Fixed the docs home page showing a stale "In This Version (`v3.1.0`)" in every versioned build; it now has a version-neutral "What's New" section. Added the v3.2.0 release notes page. (#74, @kopardev)
 - Refreshed the `parkit --help` output in `README.md` (adds `ls`, `-v/--version`, and the new `checkapisync`/`syncapi` descriptions) and listed `ls` in the `parkit` CLI overview docs. (#71, @kopardev)
