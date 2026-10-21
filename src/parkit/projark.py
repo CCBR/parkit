@@ -15,6 +15,20 @@ from parkit.src.VersionCheck import __version__
 from parkit.src.checkapisync import check_hpc_dme_apis_sync
 from parkit.src.createtar import createtar
 from parkit.src.lscollection import ls_collection, query_all_dataobjects
+from parkit.src.staging import (
+    assert_free_space,
+    assert_no_overlap,
+    assert_not_deposit_staging,
+    check_existing_root,
+    deposit_required_bytes,
+    estimate_staging_bytes,
+    prepare_staging_root,
+    reclaimable_bytes,
+    remove_staging_root,
+    resolve_staging_base,
+    retrieve_required_bytes,
+    staging_root,
+)
 from parkit.src.utils import collection_exists, get_md5sum, human_size, run_dm_cmd
 
 
@@ -425,24 +439,6 @@ def _ensure_deposit_collections(base_collection, datatype, project_number):
     return datatype_collection
 
 
-def _prepare_scratch_dirs(project_tag, datatype):
-    user = os.environ.get("USER", "")
-    if not user:
-        raise RuntimeError("USER environment variable is not set.")
-
-    scratch_root = Path("/scratch") / user / project_tag
-    datatype_dir = scratch_root / datatype
-
-    _info(f"Step 4: preparing scratch staging area at {scratch_root}")
-    if scratch_root.exists():
-        _info("Scratch project directory exists; deleting and recreating it.")
-        shutil.rmtree(scratch_root)
-
-    datatype_dir.mkdir(parents=True, exist_ok=True)
-    _info(f"Created datatype staging directory: {datatype_dir}")
-    return scratch_root, datatype_dir
-
-
 def _split_if_needed(tar_path, split_size_gb):
     tar_size = tar_path.stat().st_size
     _info(f"Tar size is {_human_size(tar_size)} ({tar_size} bytes).")
@@ -492,6 +488,61 @@ def _write_md5_files(directory):
         _info(f"md5 written: {md5_path.name}")
 
 
+def _preflight_deposit_staging(
+    source_folder, project_tag, staging_dir, split_size_bytes
+):
+    """Run local staging checks for ``projark deposit`` before any remote action.
+
+    Resolves the staging base (``--staging-dir`` > ``$PROJARK_STAGING_DIR`` >
+    ``/scratch/$USER``), checks that the staging root does not overlap the
+    source folder, that an existing staging root carries the projark marker,
+    and that the base has enough free space for the tarball (and its split
+    parts, if splitting is needed).
+
+    Args:
+        source_folder (Path): Resolved folder that will be archived.
+        project_tag (str): Project tag, e.g. ``CCBR-1234``.
+        staging_dir (str): Value of ``--staging-dir`` (empty for the default).
+        split_size_bytes (int): Split threshold/chunk size in bytes.
+
+    Returns:
+        Path: The staging root ``<base>/<project_tag>``.
+
+    Raises:
+        StagingError: If any staging check fails.
+    """
+    base, is_default = resolve_staging_base(staging_dir)
+    root = staging_root(base, project_tag)
+    _info(
+        f"Staging base: {base}{' (default)' if is_default else ''}; staging folder: {root}"
+    )
+    assert_no_overlap(root, source_folder)
+    check_existing_root(root)
+    reclaim = reclaimable_bytes(root)
+    if reclaim:
+        _info(
+            f"Previous staging folder {root} ({_human_size(reclaim)}) will be "
+            "deleted before staging; counting it as free space."
+        )
+
+    _info(f"Estimating tar size for {source_folder} ...")
+    estimated_bytes, filelist_bytes = estimate_staging_bytes(source_folder)
+    _info(
+        f"Estimated tar size: {_human_size(estimated_bytes)} ({estimated_bytes} "
+        f"bytes); filelist: {_human_size(filelist_bytes)}."
+    )
+    required_bytes = deposit_required_bytes(
+        estimated_bytes, split_size_bytes, filelist_bytes
+    )
+    assert_free_space(base, required_bytes, "deposit staging", reclaim)
+    free_bytes = shutil.disk_usage(base).free + reclaim
+    _ok(
+        f"Staging preflight passed: {_human_size(free_bytes)} available in {base}, "
+        f"{_human_size(required_bytes)} required."
+    )
+    return root
+
+
 def _run_deposit(args):
     if not _run_sync_gate():
         return 1
@@ -512,15 +563,35 @@ def _run_deposit(args):
     project_tag = _project_tag(args.projectnumber)
     base_collection = _project_collection_path(args.projectnumber)
     datatype = args.datatype
+
+    split_size_bytes = int(args.split_size_gb * 1024**3)
+    if split_size_bytes <= 0:
+        return _error("--split-size-gb must be greater than 0.")
+    tarname = args.tarname if args.tarname else _default_tarname(args.projectnumber)
+    if "/" in tarname:
+        return _error("--tarname must be a file name, not a path.")
+
+    # Local preflight runs before any HPC-DME collection is created.
+    root = _preflight_deposit_staging(
+        source_folder, project_tag, args.staging_dir, split_size_bytes
+    )
+
     datatype_collection = _ensure_deposit_collections(
         base_collection, datatype, args.projectnumber
     )
 
-    scratch_root, datatype_dir = _prepare_scratch_dirs(project_tag, datatype)
+    _info(f"Step 4: preparing staging area at {root}")
+    metadata = {
+        "user": os.environ.get("USER", ""),
+        "host": socket.gethostname(),
+        "parkit_version": __version__,
+        "projectnumber": args.projectnumber,
+        "datatype": datatype,
+        "source": str(source_folder),
+    }
+    datatype_dir = prepare_staging_root(root, datatype, metadata)
+    _info(f"Created datatype staging directory: {datatype_dir}")
 
-    tarname = args.tarname if args.tarname else _default_tarname(args.projectnumber)
-    if "/" in tarname:
-        return _error("--tarname must be a file name, not a path.")
     _info("Checking for tar file name conflict in HPC-DME destination collection ...")
     tarname = _resolve_tarname(tarname, datatype_collection)
     tar_path = datatype_dir / tarname
@@ -554,11 +625,13 @@ def _run_deposit(args):
     _ok("Transfer completed.")
 
     if args.cleanup:
-        _step(7, f"cleanup requested; deleting {scratch_root}")
-        shutil.rmtree(scratch_root)
+        _step(7, f"cleanup requested; deleting staging folder {root}")
+        remove_staging_root(root)
         _ok("Cleanup completed.")
     else:
-        _step(7, f"cleanup not requested; staged files retained at {scratch_root}")
+        _step(
+            7, f"cleanup not requested; staged files retained at staging folder {root}"
+        )
 
     _ok("Deposit workflow finished successfully.")
     return 0
@@ -617,6 +690,29 @@ def _merge_split_tar_parts(target_dir):
         _info(f"Merged tar created and part files removed: {merged_tar}")
 
 
+def _check_retrieve_free_space(target_dir, objects, unsplit):
+    """Abort before downloading if ``target_dir`` lacks space for ``objects``.
+
+    Args:
+        target_dir (Path): Local download directory (must exist).
+        objects (list): ``(path, size, ...)`` tuples from ``query_all_dataobjects``.
+        unsplit (bool): Whether split tar parts will be merged after download.
+
+    Raises:
+        StagingError: If free space is below the estimated requirement.
+    """
+    required_bytes = retrieve_required_bytes(objects, unsplit)
+    _info(
+        f"Checking free space in {target_dir} for {len(objects)} object(s); "
+        f"{_human_size(required_bytes)} required ..."
+    )
+    assert_free_space(target_dir, required_bytes, "retrieve download")
+    _ok(
+        f"Free-space check passed: {_human_size(shutil.disk_usage(target_dir).free)} "
+        f"free in {target_dir}."
+    )
+
+
 def _run_retrieve(args):
     if not _run_sync_gate():
         return 1
@@ -635,14 +731,14 @@ def _run_retrieve(args):
     datatype_collection = _ensure_retrieve_collections(base_collection, datatype)
 
     project_tag = _project_tag(args.projectnumber)
-    user = os.environ.get("USER", "")
-    if not user:
-        return _error("USER environment variable is not set.")
-
     if args.folder:
         base_local = _resolve_output_directory(args.folder)
     else:
-        base_local = (Path("/scratch") / user / project_tag).resolve()
+        staging_base, _is_default = resolve_staging_base(args.staging_dir)
+        base_local = staging_root(staging_base, project_tag)
+    # Retrieve never writes the staging marker, and refuses to download into a
+    # marked deposit staging folder, which a later deposit would delete.
+    assert_not_deposit_staging(base_local)
     target_dir = base_local / datatype
     target_dir.mkdir(parents=True, exist_ok=True)
     _step(4, f"local download directory: {target_dir}")
@@ -676,6 +772,10 @@ def _run_retrieve(args):
         if missing:
             return _error(f"Cannot proceed; missing object(s): {', '.join(missing)}")
 
+        requested = set(filenames)
+        selected = [obj for obj in all_objects if Path(obj[0]).name in requested]
+        _check_retrieve_free_space(target_dir, selected, args.unspilt)
+
         _step(8, "downloading requested objects ...")
         for filename in filenames:
             object_path = f"{datatype_collection}/{filename}"
@@ -684,6 +784,7 @@ def _run_retrieve(args):
             _ok(f"Downloaded: {filename}")
     else:
         _step(6, "no --filenames provided; full collection mode selected.")
+        _check_retrieve_free_space(target_dir, all_objects, args.unspilt)
         _step(7, "downloading full collection ...")
         # Download the datatype collection under base_local so we get:
         # <base_local>/<datatype>/...
@@ -775,17 +876,33 @@ def _build_parser():
         help="Tar split threshold/chunk size in GB (default: 500)",
     )
     parser_deposit.add_argument(
+        "--staging-dir",
+        dest="staging_dir",
+        default="",
+        help=(
+            "Base folder for staging the tarball, filelist, split parts and md5 files "
+            "(default: $PROJARK_STAGING_DIR, else /scratch/$USER); "
+            "files go in <DIR>/CCBR-<projectnumber>/<datatype>/"
+        ),
+    )
+    parser_deposit.add_argument(
         "--cleanup",
         action="store_true",
         default=True,
-        help="Delete /scratch/$USER/CCBR-<projectnumber> after successful transfer (default: enabled)",
+        help=(
+            "Delete the staging folder <staging-dir>/CCBR-<projectnumber> "
+            "after successful transfer (default: enabled)"
+        ),
     )
     parser_deposit.add_argument(
         "-k",
         "--no-cleanup",
         dest="cleanup",
         action="store_false",
-        help="Keep /scratch/$USER/CCBR-<projectnumber> after successful transfer",
+        help=(
+            "Keep the staging folder <staging-dir>/CCBR-<projectnumber> "
+            "after successful transfer"
+        ),
     )
 
     parser_retrieve = subparsers.add_parser(
@@ -798,11 +915,25 @@ def _build_parser():
         action="version",
         version=f"projark is part of parkit; parkit version: {__version__}",
     )
-    parser_retrieve.add_argument(
+    retrieve_location = parser_retrieve.add_mutually_exclusive_group()
+    retrieve_location.add_argument(
         "-f",
         "--folder",
         default="",
-        help="Local base folder (default: /scratch/$USER/CCBR-<projectnumber>)",
+        help=(
+            "Local base folder (default: <staging-dir>/CCBR-<projectnumber>, where "
+            "staging-dir defaults to $PROJARK_STAGING_DIR, else /scratch/$USER)"
+        ),
+    )
+    retrieve_location.add_argument(
+        "--staging-dir",
+        dest="staging_dir",
+        default="",
+        help=(
+            "Base folder; files go in <DIR>/CCBR-<projectnumber>/<datatype>/ "
+            "(default: $PROJARK_STAGING_DIR, else /scratch/$USER). "
+            "Cannot be combined with --folder."
+        ),
     )
     parser_retrieve.add_argument(
         "-p",

@@ -26,7 +26,7 @@ The analyst can use `parkit` to park these folders directly on to HPCDME's **CCB
 `projark` is the preferred interface for archiving and retrieving CCBR project data.
 
 - `deposit`: archive a local project folder to HPC-DME.
-- `retrieve`: pull archived objects back from HPC-DME to local scratch.
+- `retrieve`: pull archived objects back from HPC-DME to a local staging folder (default `/scratch/$USER`).
 
 Version:
 
@@ -72,11 +72,13 @@ Useful `deposit` flags:
 - `--tarname <name>.tar`: override default tar name.
 - `-t, --tarname <name>.tar`: override default tar name.
 - `-s, --split-size-gb <N>`: split threshold/chunk size (default `500` GB).
-- `-k, --no-cleanup`: keep scratch artifacts after successful transfer.
+- `--staging-dir <path>`: base folder for the tar, filelist, split parts and `.md5` files (default `$PROJARK_STAGING_DIR`, else `/scratch/$USER`); files go in `<path>/CCBR-<projectnumber>/<datatype>/`.
+- `-k, --no-cleanup`: keep the staging folder after successful transfer.
 
 Useful `retrieve` flags:
 
-- `-f, --folder /path`: override default local base (`/scratch/$USER/CCBR-<projectnumber>`).
+- `-f, --folder /path`: local base folder (default `<staging base>/CCBR-<projectnumber>`).
+- `--staging-dir <path>`: download to `<path>/CCBR-<projectnumber>/<datatype>/` (cannot be combined with `--folder`).
 - `-p, --projectnumber <value>`: project identifier.
 - `-d, --datatype <Analysis|Rawdata>`: datatype (default `Analysis`).
 - `-n, --filenames a,b,c`: retrieve specific objects.
@@ -95,6 +97,22 @@ Path behavior:
 
 - `--folder FASTQ` and `--folder FASTQ/` are both accepted.
 - Relative `--folder` values are resolved to absolute paths before use.
+
+Staging location and safety checks:
+
+- The staging base is `--staging-dir`, else `$PROJARK_STAGING_DIR`, else `/scratch/$USER`. A custom base must already exist and be writable.
+- Before creating any HPC-DME collection, `deposit` estimates the tar and `.filelist` sizes and aborts if the staging filesystem lacks free space (about 2x the tar size when it will be split, plus the filelist and a margin; a marked staging folder from a previous run counts as reclaimable). `retrieve` runs a similar check before downloading.
+- The check uses filesystem free space and cannot see per-user/group quotas (e.g. `/data/$USER`, `/data/CCBR`); check those with `checkquota`.
+- `deposit` aborts if the staging folder `<base>/CCBR-<projectnumber>` overlaps the folder being archived.
+- `deposit` marks its staging folder with a `.projark_staging` file and only deletes (on rerun or cleanup) folders that carry this marker. An existing unmarked `CCBR-<projectnumber>` folder (e.g. left by an older version with `-k`) makes `deposit` abort; check its contents and remove it, or use another `--staging-dir`.
+- `retrieve` never writes the marker, and it refuses to download into a folder that has one, or into any folder inside it (a leftover deposit staging folder), because a later `deposit` would delete it. Remove the leftover folder or choose another `--folder`/`--staging-dir`.
+
+Use a larger filesystem for staging (example):
+
+```bash
+export PROJARK_STAGING_DIR=/data/$USER/staging
+projark deposit -f /data/CCBR/projects/CCBR-12345 -p 12345 -d Analysis
+```
 
 Runtime logging and notifications:
 
