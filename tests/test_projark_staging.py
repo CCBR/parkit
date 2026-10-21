@@ -149,7 +149,22 @@ def test_deposit_overlap_aborts_before_collections(
     (source / "data.txt").write_text("payload\n")
     monkeypatch.setenv(ENV_VAR, str(tmp_path))
     monkeypatch.setattr(staging.shutil, "disk_usage", _fake_disk_usage(HUGE_FREE))
-    with pytest.raises(StagingError):
+    with pytest.raises(StagingError, match="same folder as the source"):
+        projark._run_deposit(_deposit_args(source))
+    assert collection_calls == []
+    assert (source / "data.txt").read_text() == "payload\n"
+
+
+def test_deposit_source_inside_marked_root_aborts_before_collections(
+    gates, collection_calls, staging_base, monkeypatch
+):
+    root = staging_base / "CCBR-1234"
+    staging.prepare_staging_root(root, "Analysis", {"projectnumber": "1234"})
+    source = root / "Analysis" / "data"
+    source.mkdir()
+    (source / "data.txt").write_text("payload\n")
+    monkeypatch.setattr(staging.shutil, "disk_usage", _fake_disk_usage(HUGE_FREE))
+    with pytest.raises(StagingError, match="inside the staging root"):
         projark._run_deposit(_deposit_args(source))
     assert collection_calls == []
     assert (source / "data.txt").read_text() == "payload\n"
