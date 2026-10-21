@@ -1,7 +1,7 @@
 ## parkit development version
 
 - Refreshed the `parkit --help` output in `README.md` (adds `ls`, `-v/--version`, and the new `checkapisync`/`syncapi` descriptions) and listed `ls` in the `parkit` CLI overview docs. (#71, @kopardev)
-- `projark` staging location is now configurable, with safety checks to avoid failures like `split` running out of space in `/scratch/$USER` (#72, @kopardev):
+- `projark` staging location is now configurable, with safety checks to avoid failures like `split` running out of space in `/scratch/$USER` (#72, #73, @kopardev):
   - New `--staging-dir DIR` option (and `PROJARK_STAGING_DIR` env var) for `projark deposit` and `projark retrieve`; the default remains `/scratch/$USER`. Files go in `<DIR>/CCBR-<projectnumber>/<datatype>/`. For `retrieve`, `--staging-dir` and `-f/--folder` are mutually exclusive.
   - `projark deposit` estimates the tar size and aborts before creating any HPC-DME collection if the staging filesystem lacks free space (about 2x the tar size when it will be split, else 1x, plus the `.filelist` and a margin). `projark retrieve` checks free space before downloading (including merged tars with `--unsplit`).
   - `projark deposit` aborts if the staging folder is the source folder, is inside it, or contains it.
