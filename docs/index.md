@@ -4,16 +4,25 @@
 
 For most users, the recommended interface is `projark`, which provides guided `deposit` and `retrieve` workflows for entire CCBR project folder(s).
 
-## In This Version (`v3.1.0`)
+## What's New
 
-- `projark ls <projectnumber>` — list vault contents as a tree with sizes, depositor, and deposit date.
-- `parkit ls <collection-path>` — list any HPC-DME collection path.
-- `projark deposit` HTTP 400 fix: all required HPC-DME metadata fields now sent on collection creation.
-- Split-tar conflict detection: prior split deposits correctly detected before re-depositing.
-- Temp file isolation: HPC-DME CLI response files no longer accumulate in the working directory.
-- Pre-transfer conflict detection and automatic file renaming in `projark deposit`.
-- Proxy settings validation: aborts if proxy lines are active in `hpcdme.properties`.
-- Batch existence check in `projark retrieve`; split-tar advisory when `--unsplit` not passed.
+Use the version selector at the top of the page to view the docs for a specific release. Full details are in the [Release Notes](release-notes/v3.2.0.md) and the [CHANGELOG](https://github.com/CCBR/parkit/blob/main/CHANGELOG.md).
+
+### Since v3.2.0 (development version)
+
+- `projark deposit` / `projark retrieve` `--staging-dir` (or `PROJARK_STAGING_DIR`): choose where tarballs, split parts and downloads are staged (default `/scratch/$USER`).
+- Free-space preflight: `projark deposit` aborts before creating any HPC-DME collection if the staging filesystem cannot hold the tarball (about 2× when it will be split); `projark retrieve` checks space before downloading.
+- Safer staging: only folders carrying a `.projark_staging` marker are ever deleted, and staging may not overlap the source folder. See [Operational Guidance](operations.md).
+
+### v3.2.0
+
+- `parkit syncapi` / `parkit checkapisync` track HPC_DME_APIs `releases/X.Y.Z` branches (latest stable release by default, or `--ref` / `HPC_DME_APIs_REF`) with meaningful exit codes. See [v3.2.0 release notes](release-notes/v3.2.0.md).
+- Removed the hard-coded personal fallback path for the HPC_DME_APIs repository.
+
+### v3.1.0
+
+- `projark ls <projectnumber>` and `parkit ls <collection-path>` list vault contents.
+- Several `projark deposit` / `retrieve` fixes. See [v3.1.0 release notes](release-notes/v3.1.0.md).
 
 ## Quick Start
 
@@ -37,4 +46,4 @@ projark ls --help
 - Disclaimer: Open OnDemand is currently available only on Biowulf compute nodes, not directly on Helix. Since `projark` is Helix-only today, use `tmux`/`screen` on Helix; Open OnDemand support is future-facing until Helix access is available.
 - `projark` logs include ISO 8601 timestamps.
 - `projark` sends completion/failure email to `$USER@nih.gov` from `NCICCBR@mail.nih.gov`.
-- Docs are versioned; this set describes `v3.1.0` behavior.
+- Docs are versioned; use the version selector to match the docs to your installed `parkit` (`projark --version`).
