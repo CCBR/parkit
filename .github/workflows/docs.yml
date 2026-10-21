@@ -20,6 +20,8 @@ on:
       - .github/workflows/docs.yml
       - mkdocs.yaml
       - VERSION
+      - src/parkit/src/VERSION
+      - CHANGELOG.md
       - README.md
       - "docs/**"
 
