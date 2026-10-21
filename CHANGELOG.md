@@ -1,6 +1,14 @@
 ## parkit development version
 
 - Refreshed the `parkit --help` output in `README.md` (adds `ls`, `-v/--version`, and the new `checkapisync`/`syncapi` descriptions) and listed `ls` in the `parkit` CLI overview docs. (#71, @kopardev)
+- `projark` staging location is now configurable, with safety checks to avoid failures like `split` running out of space in `/scratch/$USER` (#72, @kopardev):
+  - New `--staging-dir DIR` option (and `PROJARK_STAGING_DIR` env var) for `projark deposit` and `projark retrieve`; the default remains `/scratch/$USER`. Files go in `<DIR>/CCBR-<projectnumber>/<datatype>/`. For `retrieve`, `--staging-dir` and `-f/--folder` are mutually exclusive.
+  - `projark deposit` estimates the tar size and aborts before creating any HPC-DME collection if the staging filesystem lacks free space (about 2x the tar size when it will be split, else 1x, plus the `.filelist` and a margin). `projark retrieve` checks free space before downloading (including merged tars with `--unsplit`).
+  - `projark deposit` aborts if the staging folder is the source folder, is inside it, or contains it.
+  - `projark deposit` writes a `.projark_staging` marker in `<DIR>/CCBR-<projectnumber>/` and only deletes (on rerun or cleanup) staging folders that carry it. The free-space check counts an existing marked staging folder from a previous run as reclaimable, since it is deleted before staging.
+  - `projark retrieve` never writes the marker and refuses to download into a folder that has one, or into any folder inside it (a leftover deposit staging folder), since a later `deposit` would delete it.
+  - **Behavior change:** an existing unmarked `/scratch/$USER/CCBR-<projectnumber>` (e.g. left by an older version with `-k`) now makes `deposit` abort instead of being silently deleted; check and remove it manually.
+  - The free-space check cannot see per-user/group quotas (e.g. `/data/$USER`, `/data/CCBR`); use `checkquota`.
 
 ## parkit 3.2.0
 

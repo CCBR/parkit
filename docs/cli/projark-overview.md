@@ -15,7 +15,7 @@ All print the same package-aware message.
 ## Subcommands
 
 - `deposit`: archive local folder content to HPC-DME project collection.
-- `retrieve`: retrieve archived data objects back to local scratch.
+- `retrieve`: retrieve archived data objects back to a local staging folder (default `/scratch/$USER/CCBR-<projectnumber>`).
 - `ls`: list all data objects in a project's vault collection (no gates or email required).
 
 ## Safety Gates
