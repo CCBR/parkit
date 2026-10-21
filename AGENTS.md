@@ -48,3 +48,13 @@ For AI-assisted commits, PRs, and issues, end the message with this footnote as 
 ```
 
 This replaces the plain `Generated using AI` and italic `_Generated using AI_` lines required by `.github/copilot-instructions.md`.
+
+## Testing
+
+Run tests with the shared CCBR dev environment, which has parkit installed in editable mode from this repository checkout (Python 3.11) plus `pytest`:
+
+```bash
+PATH=/vf/users/CCBR_Pipeliner/db/PipeDB/miniforge3/envs/parkit_dev/bin:$PATH python -m pytest -q tests
+```
+
+Do not create a separate virtual environment for testing. Do not install or remove packages in this shared environment without asking the user. `ruff` is not installed there; run linting through `pre-commit` or a separate tool environment.
