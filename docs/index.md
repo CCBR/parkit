@@ -6,13 +6,13 @@ For most users, the recommended interface is `projark`, which provides guided `d
 
 ## What's New
 
-Use the version selector at the top of the page to view the docs for a specific release. Full details are in the [Release Notes](release-notes/v3.2.0.md) and the [CHANGELOG](https://github.com/CCBR/parkit/blob/main/CHANGELOG.md).
+Use the version selector at the top of the page to view the docs for a specific release. Full details are in the [Release Notes](release-notes/v3.3.0.md) and the [CHANGELOG](https://github.com/CCBR/parkit/blob/main/CHANGELOG.md).
 
-### Since v3.2.0 (development version)
+### v3.3.0
 
 - `projark deposit` / `projark retrieve` `--staging-dir` (or `PROJARK_STAGING_DIR`): choose where tarballs, split parts and downloads are staged (default `/scratch/$USER`).
 - Free-space preflight: `projark deposit` aborts before creating any HPC-DME collection if the staging filesystem cannot hold the tarball (about 2× when it will be split); `projark retrieve` checks space before downloading.
-- Safer staging: only folders carrying a `.projark_staging` marker are ever deleted, and staging may not overlap the source folder. See [Operational Guidance](operations.md).
+- Safer staging: only folders carrying a `.projark_staging` marker are ever deleted, and staging may not overlap the source folder. See [Operational Guidance](operations.md) and the [v3.3.0 release notes](release-notes/v3.3.0.md).
 
 ### v3.2.0
 
