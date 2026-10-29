@@ -1,6 +1,6 @@
 ## parkit development version
 
-- `projark ls` and `parkit ls` now show exact bytes by default. Add `--human-readable` for decimal KB/MB/GB; JSON retains `size_bytes` and uses decimal `size_human`. (#78, @kopardev)
+- `projark ls` and `parkit ls` now show exact bytes by default. Add `--human-readable` for decimal KB/MB/GB; JSON retains `size_bytes` and uses decimal `size_human`. (#78, #79, @kopardev)
 
 ## parkit 3.3.0
 
