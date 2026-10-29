@@ -32,8 +32,8 @@ projark ls CCBR_982
 ## Size formatting
 
 Sizes default to exact integer bytes (`B`) for files and collection totals.
-Use `--human-readable` for decimal units: 1 KB = 1000 bytes, 1 MB = 1000000 bytes.
-For example, `57743 B` becomes `57.74 KB`. This avoids the previous binary/decimal
+Use `--human-readable` for decimal units with one digit after the decimal point: 1 KB = 1000 bytes, 1 MB = 1000000 bytes.
+For example, `57743 B` becomes `57.7 KB`. This avoids the previous binary/decimal
 unit mismatch with HPC-DME; displayed precision may still differ from the portal.
 `--human-readable` and `--json` are mutually exclusive. JSON retains numeric
 `size_bytes` and includes decimal `size_human`. Unknown sizes remain unknown.
@@ -66,7 +66,7 @@ Emits a JSON array:
   {
     "path": "/CCBR_Archive/GRIDFTP/Project_CCBR-982/Analysis/ccbr982.tar_0001",
     "size_bytes": 500000000000,
-    "size_human": "500.00 GB",
+    "size_human": "500.0 GB",
     "depositor": "Vishal Koparde",
     "deposit_date": "260625"
   }

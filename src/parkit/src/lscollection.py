@@ -184,7 +184,7 @@ def _format_size(size, human_readable=False):
         while value >= 1000 and index < len(units) - 1:
             value /= 1000
             index += 1
-        result = f"{value:.2f} {units[index]}"
+        result = f"{value:.1f} {units[index]}"
     return result
 
 

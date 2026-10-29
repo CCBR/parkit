@@ -12,12 +12,12 @@ from parkit.src import lscollection as listing
 @pytest.mark.parametrize(
     "size,expected",
     [
-        (0, "0.00 B"),
-        (999, "999.00 B"),
-        (1000, "1.00 KB"),
-        (57743, "57.74 KB"),
-        (1000000, "1.00 MB"),
-        (536870912000, "536.87 GB"),
+        (0, "0.0 B"),
+        (999, "999.0 B"),
+        (1000, "1.0 KB"),
+        (57743, "57.7 KB"),
+        (1000000, "1.0 MB"),
+        (536870912000, "536.9 GB"),
     ],
 )
 def test_decimal_sizes(size, expected):
@@ -70,7 +70,7 @@ def test_unknown_and_json(capsys):
     assert records[0]["size_bytes"] is None
     assert records[0]["size_human"] is None
     assert records[1]["size_bytes"] == 57743
-    assert records[1]["size_human"] == "57.74 KB"
+    assert records[1]["size_human"] == "57.7 KB"
 
 
 @pytest.mark.parametrize(
