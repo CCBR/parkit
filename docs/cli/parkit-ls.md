@@ -1,11 +1,12 @@
 # parkit ls
 
-Lists all data objects under any HPC-DME collection path and renders them as a human-readable tree. Uses the same backend as `projark ls` but accepts a full HPC-DME path instead of a project number.
+Lists all data objects under any HPC-DME collection path and renders them as a tree with exact byte sizes. Uses the same backend as `projark ls` but accepts a full HPC-DME path instead of a project number.
 
 ## Syntax
 
 ```bash
 parkit ls <COLLECTION_PATH>
+parkit ls <COLLECTION_PATH> --human-readable
 parkit ls <COLLECTION_PATH> --json
 ```
 
@@ -14,6 +15,7 @@ parkit ls <COLLECTION_PATH> --json
 | Argument          | Type                  | Description                                           |
 | ----------------- | --------------------- | ----------------------------------------------------- |
 | `COLLECTION_PATH` | positional (required) | Full HPC-DME collection path                          |
+| `--human-readable` | flag | Show decimal KB, MB, GB instead of exact bytes |
 | `--json`          | flag                  | Emit results as a JSON array instead of the tree view |
 
 ## Examples
@@ -30,22 +32,31 @@ List **all projects** under the GRIDFTP root (shows full multi-project hierarchy
 parkit ls /CCBR_Archive/GRIDFTP
 ```
 
+## Size formatting
+
+Sizes default to exact integer bytes (`B`) for files and collection totals.
+Use `--human-readable` for decimal units: 1 KB = 1000 bytes, 1 MB = 1000000 bytes.
+For example, `57743 B` becomes `57.74 KB`. This avoids the previous binary/decimal
+unit mismatch with HPC-DME; displayed precision may still differ from the portal.
+`--human-readable` and `--json` are mutually exclusive. JSON retains numeric
+`size_bytes` and includes decimal `size_human`. Unknown sizes remain unknown.
+
 ## Output
 
 ### Default (tree view)
 
 ```
-GRIDFTP  (1.99 TB)
-├── Project_CCBR-1068/  (1000.00 GB)
-│   └── Analysis/  (1000.00 GB)
-│       ├── ccbr1068.tar_0001                         500.00 GB     Samarth Mathur,260220
-│       └── ccbr1068.tar_0002                         500.00 GB     Samarth Mathur,260220
-└── Project_CCBR-982/  (1.01 TB)
-    ├── Analysis/  (569.84 GB)
-    │   ├── ccbr982.tar_0001                          500.00 GB     Vishal Koparde,260625
-    │   └── ccbr982.tar_0002                          69.84 GB      Vishal Koparde,260625
-    └── Rawdata/  (465.57 GB)
-        └── ccbr982.tar                               465.57 GB     Vishal Koparde,240429
+GRIDFTP  (2037000000000 B)
+├── Project_CCBR-1068/  (1000000000000 B)
+│   └── Analysis/  (1000000000000 B)
+│       ├── ccbr1068.tar_0001                         500000000000 B     Samarth Mathur,260220
+│       └── ccbr1068.tar_0002                         500000000000 B     Samarth Mathur,260220
+└── Project_CCBR-982/  (1037000000000 B)
+    ├── Analysis/  (571000000000 B)
+    │   ├── ccbr982.tar_0001                          500000000000 B     Vishal Koparde,260625
+    │   └── ccbr982.tar_0002                          71000000000 B      Vishal Koparde,260625
+    └── Rawdata/  (466000000000 B)
+        └── ccbr982.tar                               466000000000 B     Vishal Koparde,240429
 ```
 
 The tree renders the full path hierarchy at any depth. Sub-collection totals are shown in parentheses.
@@ -62,7 +73,7 @@ Emits a JSON array of all data objects:
 [
   {
     "path": "/CCBR_Archive/GRIDFTP/Project_CCBR-982/Analysis/ccbr982.tar_0001",
-    "size_bytes": 536870912000,
+    "size_bytes": 500000000000,
     "size_human": "500.00 GB",
     "depositor": "Vishal Koparde",
     "deposit_date": "260625"

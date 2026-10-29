@@ -1,5 +1,7 @@
 ## parkit development version
 
+- `projark ls` and `parkit ls` now show exact bytes by default. Add `--human-readable` for decimal KB/MB/GB; JSON retains `size_bytes` and uses decimal `size_human`. (#78, @kopardev)
+
 ## parkit 3.3.0
 
 - Fixed the docs home page showing a stale "In This Version (`v3.1.0`)" in every versioned build; it now has a version-neutral "What's New" section. Added the v3.2.0 release notes page. (#74, @kopardev)

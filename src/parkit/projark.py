@@ -819,7 +819,9 @@ def _run_ls(args):
     _ok("Project collection found.")
 
     _step(2, "querying data objects ...")
-    return ls_collection(project_path, json_output=args.json)
+    return ls_collection(
+        project_path, json_output=args.json, human_readable=args.human_readable
+    )
 
 
 def _build_parser():
@@ -981,7 +983,13 @@ def _build_parser():
         type=_normalize_project_number,
         help="Project number (e.g. 982, ccbr982, CCBR-982)",
     )
-    parser_ls.add_argument(
+    ls_format = parser_ls.add_mutually_exclusive_group()
+    ls_format.add_argument(
+        "--human-readable",
+        action="store_true",
+        help="Show decimal sizes (KB, MB, GB) instead of exact bytes",
+    )
+    ls_format.add_argument(
         "--json",
         action="store_true",
         default=False,
