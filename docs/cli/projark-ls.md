@@ -12,11 +12,11 @@ projark ls <PROJECTNUMBER> --json
 
 ## Inputs
 
-| Argument        | Type                  | Description                                                    |
-| --------------- | --------------------- | -------------------------------------------------------------- |
-| `PROJECTNUMBER` | positional (required) | Project number — same formats accepted as `deposit`/`retrieve` |
-| `--human-readable` | flag | Show decimal KB, MB, GB instead of exact bytes |
-| `--json`        | flag                  | Emit results as a JSON array instead of the tree view          |
+| Argument           | Type                  | Description                                                    |
+| ------------------ | --------------------- | -------------------------------------------------------------- |
+| `PROJECTNUMBER`    | positional (required) | Project number — same formats accepted as `deposit`/`retrieve` |
+| `--human-readable` | flag                  | Show decimal KB, MB, GB instead of exact bytes                 |
+| `--json`           | flag                  | Emit results as a JSON array instead of the tree view          |
 
 ### Project number formats
 

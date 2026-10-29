@@ -188,7 +188,9 @@ def _format_size(size, human_readable=False):
     return result
 
 
-def _render_node(node, prefix, is_last, label, indent, human_readable=False, size_width=12):
+def _render_node(
+    node, prefix, is_last, label, indent, human_readable=False, size_width=12
+):
     """Recursively render a tree node."""
     connector = "└──" if is_last else "├──"
     sz = _node_size(node)
@@ -219,7 +221,9 @@ def _render_node(node, prefix, is_last, label, indent, human_readable=False, siz
         item_connector = "└──" if is_last_item else "├──"
         sz_str = _format_size(size, human_readable)
         dep_col = ",".join(filter(None, [depositor, deposit_date])) or ""
-        print(f"{child_indent}{item_connector} {fname:<50}  {sz_str:<{size_width}}  {dep_col}")
+        print(
+            f"{child_indent}{item_connector} {fname:<50}  {sz_str:<{size_width}}  {dep_col}"
+        )
 
 
 def render_ls_tree(collection_path, objects, human_readable=False):
@@ -233,7 +237,8 @@ def render_ls_tree(collection_path, objects, human_readable=False):
     total_all = _node_size(root)
     total_str = (
         f"  ({_format_size(total_all, human_readable)})"
-        if total_all is not None else ""
+        if total_all is not None
+        else ""
     )
     print(f"{collection_name}{total_str}")
 
