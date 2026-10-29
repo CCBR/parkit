@@ -2,9 +2,9 @@
 
 Public API
 ----------
-ls_collection(collection_path, json_output=False) -> int
+ls_collection(collection_path, json_output=False, human_readable=False) -> int
     Query all data objects under *collection_path* and render them as a
-    tree (default) or as a JSON array (when *json_output* is True).
+    tree with exact bytes (default) or as a JSON array (when *json_output* is True).
     Returns 0 on success.
 
 The functions in this module are also used by ``projark ls`` so that
@@ -15,10 +15,11 @@ import json
 import os
 import shlex
 from datetime import datetime
+from decimal import Decimal
 from pathlib import Path
 from tempfile import NamedTemporaryFile
 
-from parkit.src.utils import human_size, run_dm_cmd
+from parkit.src.utils import run_dm_cmd
 
 
 _LS_CRITERIA = {
@@ -170,11 +171,30 @@ def _node_size(node):
     return total
 
 
-def _render_node(node, prefix, is_last, label, indent):
+def _format_size(size, human_readable=False):
+    """Format exact bytes or decimal human-readable units for listings."""
+    if size is None:
+        result = "unknown"
+    elif not human_readable:
+        result = f"{size} B"
+    else:
+        value = Decimal(size)
+        units = ("B", "KB", "MB", "GB", "TB", "PB")
+        index = 0
+        while value >= 1000 and index < len(units) - 1:
+            value /= 1000
+            index += 1
+        result = f"{value:.1f} {units[index]}"
+    return result
+
+
+def _render_node(
+    node, prefix, is_last, label, indent, human_readable=False, size_width=12
+):
     """Recursively render a tree node."""
     connector = "└──" if is_last else "├──"
     sz = _node_size(node)
-    sz_str = f"  ({human_size(sz)})" if sz is not None else ""
+    sz_str = f"  ({_format_size(sz, human_readable)})" if sz is not None else ""
     # directory node
     print(f"{indent}{connector} {label}/{sz_str}")
     child_indent = indent + ("    " if is_last else "│   ")
@@ -185,23 +205,41 @@ def _render_node(node, prefix, is_last, label, indent):
 
     for idx, subdir in enumerate(subdirs):
         is_last_child = idx == total_children - 1
-        _render_node(node[subdir], prefix, is_last_child, subdir, child_indent)
+        _render_node(
+            node[subdir],
+            prefix,
+            is_last_child,
+            subdir,
+            child_indent,
+            human_readable,
+            size_width,
+        )
 
     for idx, (fname, _path, size, depositor, deposit_date) in enumerate(files):
         item_idx = len(subdirs) + idx
         is_last_item = item_idx == total_children - 1
         item_connector = "└──" if is_last_item else "├──"
-        sz_str = human_size(size) if size is not None else "unknown"
+        sz_str = _format_size(size, human_readable)
         dep_col = ",".join(filter(None, [depositor, deposit_date])) or ""
-        print(f"{child_indent}{item_connector} {fname:<50}  {sz_str:<12}  {dep_col}")
+        print(
+            f"{child_indent}{item_connector} {fname:<50}  {sz_str:<{size_width}}  {dep_col}"
+        )
 
 
-def render_ls_tree(collection_path, objects):
+def render_ls_tree(collection_path, objects, human_readable=False):
     """Print *objects* as a recursive box-drawing tree rooted at *collection_path*."""
+    size_width = max(
+        12,
+        max((len(_format_size(obj[1], human_readable)) for obj in objects), default=0),
+    )
     root = _build_tree(collection_path, objects)
     collection_name = Path(collection_path).name
     total_all = _node_size(root)
-    total_str = f"  ({human_size(total_all)})" if total_all is not None else ""
+    total_str = (
+        f"  ({_format_size(total_all, human_readable)})"
+        if total_all is not None
+        else ""
+    )
     print(f"{collection_name}{total_str}")
 
     subdirs = sorted(k for k in root if k != "__files__")
@@ -210,15 +248,23 @@ def render_ls_tree(collection_path, objects):
 
     for idx, subdir in enumerate(subdirs):
         is_last = idx == total_top - 1
-        _render_node(root[subdir], collection_path, is_last, subdir, "")
+        _render_node(
+            root[subdir],
+            collection_path,
+            is_last,
+            subdir,
+            "",
+            human_readable,
+            size_width,
+        )
 
     for idx, (fname, _path, size, depositor, deposit_date) in enumerate(files):
         item_idx = len(subdirs) + idx
         is_last = item_idx == total_top - 1
         connector = "└──" if is_last else "├──"
-        sz_str = human_size(size) if size is not None else "unknown"
+        sz_str = _format_size(size, human_readable)
         dep_col = ",".join(filter(None, [depositor, deposit_date])) or ""
-        print(f"{connector} {fname:<50}  {sz_str:<12}  {dep_col}")
+        print(f"{connector} {fname:<50}  {sz_str:<{size_width}}  {dep_col}")
 
 
 def render_ls_json(objects):
@@ -229,7 +275,7 @@ def render_ls_json(objects):
             {
                 "path": abs_path,
                 "size_bytes": size,
-                "size_human": human_size(size) if size is not None else None,
+                "size_human": _format_size(size, True) if size is not None else None,
                 "depositor": depositor,
                 "deposit_date": deposit_date,
             }
@@ -237,7 +283,7 @@ def render_ls_json(objects):
     print(json.dumps(records, indent=2))
 
 
-def ls_collection(collection_path, json_output=False):
+def ls_collection(collection_path, json_output=False, human_readable=False):
     """Query all data objects under *collection_path* and render output.
 
     Parameters
@@ -246,6 +292,10 @@ def ls_collection(collection_path, json_output=False):
         Full HPC-DME absolute path (e.g. ``/CCBR_Archive/GRIDFTP/Project_CCBR-982``).
     json_output:
         When ``True``, emit a JSON array instead of the tree view.
+
+    human_readable:
+        When ``True``, format tree sizes in decimal units (powers of 1000).
+        Otherwise show exact integer bytes.
 
     Returns
     -------
@@ -261,6 +311,6 @@ def ls_collection(collection_path, json_output=False):
         render_ls_json(objects)
     else:
         print()
-        render_ls_tree(collection_path, objects)
+        render_ls_tree(collection_path, objects, human_readable=human_readable)
         print()
     return 0

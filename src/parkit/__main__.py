@@ -156,7 +156,13 @@ def main():
         type=str,
         help="Full HPC-DME collection path (e.g. /CCBR_Archive/GRIDFTP/Project_CCBR-982)",
     )
-    parser_ls.add_argument(
+    ls_format = parser_ls.add_mutually_exclusive_group()
+    ls_format.add_argument(
+        "--human-readable",
+        action="store_true",
+        help="Show decimal sizes (KB, MB, GB) instead of exact bytes",
+    )
+    ls_format.add_argument(
         "--json",
         action="store_true",
         default=False,
@@ -223,7 +229,13 @@ def main():
                 f"ERROR: Collection does not exist in HPC-DME: {args.collection_path}"
             )
             sys.exit(1)
-        sys.exit(ls_collection(args.collection_path, json_output=args.json))
+        sys.exit(
+            ls_collection(
+                args.collection_path,
+                json_output=args.json,
+                human_readable=args.human_readable,
+            )
+        )
     for f in files_created:
         print(f"createmetadata: {f} file was created!")
 
