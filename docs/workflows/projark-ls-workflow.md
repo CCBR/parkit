@@ -24,7 +24,7 @@ Project_CCBR-982  (1037000000000 B)
 ```
 
 !!! note "Index lag"
-    HPC-DME's search index may lag up to **60 minutes** behind a recent deposit. If `projark ls` shows no results immediately after a deposit, wait and retry.
+HPC-DME's search index may lag up to **60 minutes** behind a recent deposit. If `projark ls` shows no results immediately after a deposit, wait and retry.
 
 ## View all archived projects
 
