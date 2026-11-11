@@ -1,5 +1,31 @@
 ## parkit development version
 
+- `projark ls` and `parkit ls` now show exact bytes by default. Add `--human-readable` for decimal KB/MB/GB; JSON retains `size_bytes` and uses decimal `size_human`. (#78, #79, @kopardev)
+
+## parkit 3.3.0
+
+- Fixed the docs home page showing a stale "In This Version (`v3.1.0`)" in every versioned build; it now has a version-neutral "What's New" section. Added the v3.2.0 release notes page. (#74, @kopardev)
+- Refreshed the `parkit --help` output in `README.md` (adds `ls`, `-v/--version`, and the new `checkapisync`/`syncapi` descriptions) and listed `ls` in the `parkit` CLI overview docs. (#71, @kopardev)
+- `projark` staging location is now configurable, with safety checks to avoid failures like `split` running out of space in `/scratch/$USER` (#72, #73, @kopardev):
+  - New `--staging-dir DIR` option (and `PROJARK_STAGING_DIR` env var) for `projark deposit` and `projark retrieve`; the default remains `/scratch/$USER`. Files go in `<DIR>/CCBR-<projectnumber>/<datatype>/`. For `retrieve`, `--staging-dir` and `-f/--folder` are mutually exclusive.
+  - `projark deposit` estimates the tar size and aborts before creating any HPC-DME collection if the staging filesystem lacks free space (about 2x the tar size when it will be split, else 1x, plus the `.filelist` and a margin). `projark retrieve` checks free space before downloading (including merged tars with `--unsplit`).
+  - `projark deposit` aborts if the staging folder is the source folder, is inside it, or contains it.
+  - `projark deposit` writes a `.projark_staging` marker in `<DIR>/CCBR-<projectnumber>/` and only deletes (on rerun or cleanup) staging folders that carry it. The free-space check counts an existing marked staging folder from a previous run as reclaimable, since it is deleted before staging.
+  - `projark retrieve` never writes the marker and refuses to download into a folder that has one, or into any folder inside it (a leftover deposit staging folder), since a later `deposit` would delete it.
+  - **Behavior change:** an existing unmarked `/scratch/$USER/CCBR-<projectnumber>` (e.g. left by an older version with `-k`) now makes `deposit` abort instead of being silently deleted; check and remove it manually.
+  - The free-space check cannot see per-user/group quotas (e.g. `/data/$USER`, `/data/CCBR`); use `checkquota`.
+
+## parkit 3.2.0
+
+- `parkit syncapi` and `parkit checkapisync` now track HPC_DME_APIs releases, which are published as `releases/X.Y.Z` branches instead of GitHub tags/releases (#68, #69, @kopardev):
+  - The default target is the latest stable release: the highest-numbered `releases/X.Y.Z` branch merged into `master`, compared numerically. Malformed names (e.g. `releases/1.5.2-candidate`) are ignored.
+  - New `--ref` option (and `HPC_DME_APIs_REF` env var, also used by the `projark` sync check) to target a specific tag or branch; `X.Y.Z` is shorthand for `releases/X.Y.Z`.
+  - `syncapi` switches to the target branch (or tag) instead of running `git pull`, never creates merge commits, never downgrades automatically, and aborts on uncommitted tracked changes or local-only commits.
+  - `checkapisync` reports the local and target release and no longer reports a clone stuck on an old release branch as in sync.
+  - Both commands now return meaningful exit codes (`0` ok, `1` out of sync/failure, `2` configuration error).
+- Removed the hard-coded personal fallback path for the HPC_DME_APIs repository; set `HPC_DM_UTILS`, `HPC_DME_APIs`, or pass `--repo`. (#68, #69, @kopardev)
+- Fixed the `mamba activate` path in `README.md` and the Getting Started docs to point to the current `parkit_3` environment. (#67, @kopardev)
+
 ## v3.1.0
 
 - Added `projark ls <projectnumber>` subcommand to list all data objects in a project's HPC-DME vault collection as a tree with human-readable sizes, depositor name, and deposit date (#62, @kopardev):
@@ -10,6 +36,10 @@
   - No Helix, tmux, or sync-gate checks required (read-only operation).
   - Prints a note that newly deposited files may not appear for up to 60 minutes (DME search index lag).
   - Does not send a completion email.
+- Added `parkit ls <COLLECTION_PATH>` subcommand to list data objects under any HPC-DME collection path (e.g. `parkit ls /CCBR_Archive/GRIDFTP/Project_CCBR-982`), sharing its listing backend with `projark ls`. (#62, @kopardev)
+- Added `--json` flag to `parkit ls` and `projark ls` to emit results as a JSON array instead of the tree view. (#62, @kopardev)
+- Fixed the `ls` tree view to render the full collection hierarchy at any depth, so listings such as `parkit ls /CCBR_Archive/GRIDFTP` no longer collapse intermediate `Project_CCBR-*` folders into duplicated `Analysis/`/`Rawdata/` labels. (#62, @kopardev)
+- Fixed `projark retrieve` step messages that printed `--unspilt` instead of `--unsplit`. (#62, @kopardev)
 - Fixed `projark deposit` name-conflict detection to also check for the first split-chunk suffix (`*.tar_0001`) when testing whether a base tar name is already taken in HPC-DME. Previously, a project whose tarball was split on a prior deposit (producing `ccbr982.tar_0001`, `ccbr982.tar_0002`, …) would not be detected as a conflict because the base name `ccbr982.tar` never exists as a data object. (#61, @kopardev)
 - Improved `projark retrieve` (#62, @kopardev):
   - Replaced N serial `dm_get_dataobject` existence checks (one per `--filenames` entry) with a single `dm_query_dataobject` call; all requested filenames are validated against the returned in-memory name set.
@@ -23,6 +53,7 @@
 - After Step 2 in `projark deposit`, print the active (non-comment) lines from `$HPC_DM_UTILS/hpcdme.properties` with a 4-space indent so users can verify their HPC-DME configuration before the transfer begins. (#56, @kopardev)
 - After Step 2 in `projark deposit`, check that proxy settings (`hpc.server.proxy.url`, `hpc.server.proxy.port`) are commented out in `hpcdme.properties`; abort with a descriptive error if any are active. Per HPC-DME team guidance (Udit Sehgal), proxy lines must not be set. (#57, @kopardev)
 - Exclude dot files (filenames starting with `.`) from `dm_register_directory` during deposit by passing a temp exclude file with patterns `.*` and `**/.*` via the `-e` flag. Prevents hidden files such as shell per-directory history files from being registered to HPC-DME. (#58, @kopardev)
+- Fixed the documentation site version selector by deploying versioned docs with `mike`, and added the parkit favicon and logo. (#51, @kopardev)
 - Before `dm_register_directory`, check whether any staged file already exists in the destination HPC-DME collection; if so, rename all staged files (primary and `.md5`) by inserting a zero-padded counter before the first extension (e.g. `ccbr1431.tar` → `ccbr1431_001.tar`), using the lowest available counter so previous deposits are never overwritten. (#59, @kopardev)
 
 ## v3.0.1
