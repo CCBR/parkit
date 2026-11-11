@@ -26,7 +26,7 @@ The analyst can use `parkit` to park these folders directly on to HPCDME's **CCB
 `projark` is the preferred interface for archiving and retrieving CCBR project data.
 
 - `deposit`: archive a local project folder to HPC-DME.
-- `retrieve`: pull archived objects back from HPC-DME to local scratch.
+- `retrieve`: pull archived objects back from HPC-DME to a local staging folder (default `/scratch/$USER`).
 
 Version:
 
@@ -72,11 +72,13 @@ Useful `deposit` flags:
 - `--tarname <name>.tar`: override default tar name.
 - `-t, --tarname <name>.tar`: override default tar name.
 - `-s, --split-size-gb <N>`: split threshold/chunk size (default `500` GB).
-- `-k, --no-cleanup`: keep scratch artifacts after successful transfer.
+- `--staging-dir <path>`: base folder for the tar, filelist, split parts and `.md5` files (default `$PROJARK_STAGING_DIR`, else `/scratch/$USER`); files go in `<path>/CCBR-<projectnumber>/<datatype>/`.
+- `-k, --no-cleanup`: keep the staging folder after successful transfer.
 
 Useful `retrieve` flags:
 
-- `-f, --folder /path`: override default local base (`/scratch/$USER/CCBR-<projectnumber>`).
+- `-f, --folder /path`: local base folder (default `<staging base>/CCBR-<projectnumber>`).
+- `--staging-dir <path>`: download to `<path>/CCBR-<projectnumber>/<datatype>/` (cannot be combined with `--folder`).
 - `-p, --projectnumber <value>`: project identifier.
 - `-d, --datatype <Analysis|Rawdata>`: datatype (default `Analysis`).
 - `-n, --filenames a,b,c`: retrieve specific objects.
@@ -96,6 +98,22 @@ Path behavior:
 - `--folder FASTQ` and `--folder FASTQ/` are both accepted.
 - Relative `--folder` values are resolved to absolute paths before use.
 
+Staging location and safety checks:
+
+- The staging base is `--staging-dir`, else `$PROJARK_STAGING_DIR`, else `/scratch/$USER`. A custom base must already exist and be writable.
+- Before creating any HPC-DME collection, `deposit` estimates the tar and `.filelist` sizes and aborts if the staging filesystem lacks free space (about 2x the tar size when it will be split, plus the filelist and a margin; a marked staging folder from a previous run counts as reclaimable). `retrieve` runs a similar check before downloading.
+- The check uses filesystem free space and cannot see per-user/group quotas (e.g. `/data/$USER`, `/data/CCBR`); check those with `checkquota`.
+- `deposit` aborts if the staging folder `<base>/CCBR-<projectnumber>` overlaps the folder being archived.
+- `deposit` marks its staging folder with a `.projark_staging` file and only deletes (on rerun or cleanup) folders that carry this marker. An existing unmarked `CCBR-<projectnumber>` folder (e.g. left by an older version with `-k`) makes `deposit` abort; check its contents and remove it, or use another `--staging-dir`.
+- `retrieve` never writes the marker, and it refuses to download into a folder that has one, or into any folder inside it (a leftover deposit staging folder), because a later `deposit` would delete it. Remove the leftover folder or choose another `--folder`/`--staging-dir`.
+
+Use a larger filesystem for staging (example):
+
+```bash
+export PROJARK_STAGING_DIR=/data/$USER/staging
+projark deposit -f /data/CCBR/projects/CCBR-12345 -p 12345 -d Analysis
+```
+
 Runtime logging and notifications:
 
 - Log lines are timestamped in ISO 8601 format (for example `2026-02-19T14:37:52-05:00`).
@@ -107,7 +125,7 @@ Runtime logging and notifications:
 - On helix or biowulf you can get access to `parkit` by loading the appropriate mamba env
 
 ```bash
-mamba activate /vf/users/CCBR_Pipeliner/db/PipeDB/miniforge3/envs/parkit
+mamba activate /vf/users/CCBR_Pipeliner/db/PipeDB/miniforge3/envs/parkit_3
 ```
 
 - `HPC_DME_APIs` package needs to be cloned and set up correctly. Follow this setup guide: https://ccbr.github.io/HowTos/docs/HPCDME/setup.html
@@ -119,7 +137,7 @@ mamba activate /vf/users/CCBR_Pipeliner/db/PipeDB/miniforge3/envs/parkit
 - Run all operations from `tmux`, `screen`, or an Open OnDemand graphical session.
 - Disclaimer: Open OnDemand is currently available only on Biowulf compute nodes, not directly on Helix. Since `projark` is Helix-only today, use `tmux`/`screen` on Helix; Open OnDemand support is future-facing until Helix access is available.
 
-- If `mamba` is not already in your `PATH`, add the following block to your `~/.bashrc` or `~/.zshrc`, then run `mamba activate /vf/users/CCBR_Pipeliner/db/PipeDB/miniforge3/envs/parkit`:
+- If `mamba` is not already in your `PATH`, add the following block to your `~/.bashrc` or `~/.zshrc`, then run `mamba activate /vf/users/CCBR_Pipeliner/db/PipeDB/miniforge3/envs/parkit_3`:
 
 ```bash
 # >>> mamba initialize >>>
@@ -145,36 +163,61 @@ parkit --help
 Output:
 
 ```text
-usage: parkit [-h] {createtar,tarprep,checkapisync,syncapi,createmetadata,createemptycollection,deposittar} ...
+usage: parkit [-h] [-v]
+              {createtar,tarprep,checkapisync,syncapi,createmetadata,createemptycollection,deposittar,ls}
+              ...
 
 parkit subcommands to park data in HPCDME
 
 positional arguments:
-  {createtar,tarprep,checkapisync,syncapi,createmetadata,createemptycollection,deposittar}
+  {createtar,tarprep,checkapisync,syncapi,createmetadata,createemptycollection,deposittar,ls}
                         Subcommand to run
-    createtar           create tarball(and its filelist) from a project folder.
+    createtar           create tarball(and its filelist) from a project
+                        folder.
     tarprep             prepare tarball for upload.
-    checkapisync        check whether the HPC_DME_APIs repository is in sync with upstream
-    syncapi             sync HPC_DME_APIs with upstream and generate a fresh token
-    createmetadata      create the metadata.json file required for a tarball (and its filelist)
+    checkapisync        check whether HPC_DME_APIs is at its latest stable
+                        release (or --ref)
+    syncapi             move HPC_DME_APIs to its latest stable release (or
+                        --ref) and generate a fresh token
+    createmetadata      create the metadata.json file required for a tarball
+                        (and its filelist)
     createemptycollection
                         creates empty project and analysis collections
     deposittar          deposit tarball(and filelist) into vault
+    ls                  list data objects under any HPC-DME collection path
 
 options:
   -h, --help            show this help message and exit
+  -v, --version         show program's version number and exit
 ```
+
+### HPC_DME_APIs releases
+
+`CBIIT/HPC_DME_APIs` no longer publishes GitHub tags or releases. Each release lives on a `releases/X.Y.Z` branch, and a release counts as **stable** once that branch is merged into `master`. Newer `releases/*` branches that are not merged yet are still in development.
+
+By default, `checkapisync` and `syncapi` target the **latest stable release**: the highest-numbered `releases/X.Y.Z` branch merged into `master`. Versions are compared numerically (`3.10.0` > `3.9.0`), and names that are not exactly `releases/X.Y.Z` (for example `releases/1.5.2-candidate`) are ignored.
+
+To use a different tag or branch, pass `--ref` or set `HPC_DME_APIs_REF` (also honored by the `projark` sync check). `X.Y.Z` is shorthand for `releases/X.Y.Z`:
+
+```bash
+parkit syncapi --ref 3.31.0          # releases/3.31.0
+export HPC_DME_APIs_REF=3.31.0       # pin for syncapi, checkapisync and projark
+```
+
+Repo resolution order (both commands):
+
+1. `--repo /path/to/HPC_DME_APIs`
+2. `HPC_DME_APIs` environment variable
+3. Parent directory of `HPC_DM_UTILS` (if it ends with `utils`)
 
 ### `parkit checkapisync`
 
-Check whether your local `HPC_DME_APIs` git repository is synchronized with its upstream remote.
+Check whether your local `HPC_DME_APIs` clone is at the target ref (latest stable release, or `--ref`/`HPC_DME_APIs_REF`).
 
-- Repo resolution order:
-  1. `HPC_DME_APIs` environment variable
-  2. Parent directory of `HPC_DM_UTILS` (if it ends with `utils`)
-  3. Fallback path: `/data/kopardevn/SandBox/HPC_DME_APIs`
-- Optional override:
-  - `parkit checkapisync --repo /path/to/HPC_DME_APIs`
+- Fetches `master` and all `releases/*` branches (or only the requested ref); your checkout is not changed.
+- In sync when `HEAD` is at the target commit (or has identical content).
+- Unless a ref is pinned, a local release **newer** than the latest stable release is also accepted, so you are never pushed to downgrade.
+- Exit codes: `0` in sync, `1` out of sync, `2` configuration error (repo not found, unknown ref).
 
 Example:
 
@@ -185,28 +228,33 @@ parkit checkapisync
 Output:
 
 ```text
-WARNING:HPC_DM_JAVA_VERSION is not set, setting it to 23.0.2
-WARNING:If you need a different version, please set it explicitly in your environment.
-HPC_DME_APIs=/data/kopardevn/GitRepos/HPC_DME_APIs
-branch=master
-local=08a93b22a74bb51455489b70bcc36ea528c74d23
-remote=9d01b7b6686266707c9720285aecefd4f46323f3
-base=dabfe0a5789ba89a1f17f1c0868eaad284f0b62a
-OUT OF SYNC: local and upstream have diverged.
+HPC_DME_APIs=/data/$USER/HPC_DME_APIs
+branch=releases/3.27.0
+local=ebbdd298b24bd96fce306fd4d895edd563d2aa14
+local_release=3.27.0
+target=releases/3.30.1 (latest stable release, branch)
+target_sha=83222692c7e9fdbecd57731a6aeb96fae34bb519
+target_release=3.30.1
+OUT OF SYNC: local release 3.27.0 is older than releases/3.30.1. Run 'parkit syncapi' to update.
 ```
 
 ### `parkit syncapi`
 
-Sync local `HPC_DME_APIs` and generate a fresh API token.
-You can also use this command just to generate/refresh a new token (even if git is already up to date).
+Move your local `HPC_DME_APIs` clone to the target ref and generate a fresh API token.
+You can also use this command just to refresh your token when the repo is already at the target.
 
 What it does:
 
-- resolves `HPC_DME_APIs` repo path
-- runs `git pull`
-- runs `source <repo>/functions && dm_generate_token`
-- prompts for password/token input interactively in your terminal
-- prints success message on completion
+1. Resolves the repo and the target ref (latest stable release, or `--ref`/`HPC_DME_APIs_REF`).
+2. Moves the clone to the target without creating merge commits:
+   - branch: checks out a local branch of the same name tracking `origin`, fast-forwarding it if it already exists
+   - tag: checks out the tag commit (detached `HEAD`)
+   - never downgrades automatically: if your local release is newer than the latest stable release, the repo is left as is; an explicit `--ref` may downgrade (with a warning)
+   - aborts if tracked files have uncommitted changes, or if the local branch has commits not on `origin`; untracked/ignored files such as `utils/hpcdme.properties` are kept
+3. Verifies `HEAD` is at the target commit and warns if `utils/version` names a different hpc-cli major.minor.
+4. Runs `source <repo>/utils/functions && dm_generate_token`, prompting for your password.
+
+Exit codes: `0` success, `1` sync or token failure, `2` configuration error.
 
 Example:
 
@@ -217,44 +265,21 @@ parkit syncapi
 Output:
 
 ```text
-HPC_DME_APIs=/data/kopardevn/GitRepos/HPC_DME_APIs
-... git pull output ...
-... dm_generate_token prompts for password ...
+syncapi: starting HPC_DME_APIs sync and token refresh
+HPC_DME_APIs=/data/$USER/HPC_DME_APIs
+syncapi: [1/4] fetching release branches and resolving target ...
+syncapi: target is releases/3.30.1 (latest stable release, branch)
+syncapi: [2/4] moving local repo to target ...
+syncapi: local releases/3.27.0 (release 3.27.0) -> target releases/3.30.1 (release 3.30.1)
+syncapi: now at releases/3.30.1 (83222692c7).
+syncapi: [3/4] locating HPC_DME_APIs functions file ...
+syncapi: [4/4] generating a fresh token via dm_generate_token ...
+syncapi: interactive prompt expected; enter your host password when asked.
+Enter host password for user '<username>':
 Now you are in sync and ready to run other parkit commands.
 ```
 
-Example failure and interpretation:
-
-```bash
-parkit syncapi
-```
-
-Output:
-
-```text
-WARNING:HPC_DM_JAVA_VERSION is not set, setting it to 23.0.2
-WARNING:If you need a different version, please set it explicitly in your environment.
-HPC_DME_APIs=/data/kopardevn/GitRepos/HPC_DME_APIs
-Merge made by the 'recursive' strategy.
- .github/workflows/build-deploy-api.yml | 8 ++++++--
- .github/workflows/build-dev-api.yml    | 4 +++-
- .github/workflows/deploy-dev-api.yml   | 4 +++-
- 3 files changed, 12 insertions(+), 4 deletions(-)
-Enter host password for user 'kopardevn':
-  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
-                                 Dload  Upload   Total   Spent    Left  Speed
-100  6065    0  6065    0     0  49713      0 --:--:-- --:--:-- --:--:-- 49713
-ERROR: No token found in /data/kopardevn/GitRepos/HPC_DME_APIs/utils/temp/log
-ERROR MESSAGE: Access Denied: LDAP authentication failed
-syncapi failed: dm_generate_token was not successful.
-```
-
-What this means:
-
-- `git pull` succeeded (your local API repo updated).
-- Token generation failed at authentication time (`LDAP authentication failed`).
-- You are synced to latest code, but not ready for data operations until token generation succeeds.
-- Re-run `parkit syncapi` and enter valid credentials; if it still fails, inspect `HPC_DME_APIs/utils/temp/log`.
+If token generation fails (for example `ERROR MESSAGE: Access Denied: LDAP authentication failed`), the repo has already been moved to the target, but you are not ready for data operations until a token is generated. Re-run `parkit syncapi` with valid credentials; if it still fails, inspect `HPC_DME_APIs/utils/temp/log`.
 
 ### Example:
 

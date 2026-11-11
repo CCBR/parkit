@@ -99,10 +99,6 @@ def get_md5sum(file_path):
 
 
 def run_dm_cmd(dm_cmd, errormsg="", returnproc=False, exitiffails=True):
-    # env_vars = {
-    #     'HPC_DM_UTILS': '/data/kopardevn/SandBox/HPC_DME_APIs/utils'
-    # }
-    # cmd = f"export HPC_DM_UTILS=/data/kopardevn/SandBox/HPC_DME_APIs/utils && source $HPC_DM_UTILS/functions && {dm_cmd}"
     cmd = f"module load java/$HPC_DM_JAVA_VERSION && source $HPC_DM_UTILS/functions && {dm_cmd}"
     print(cmd)
     _user = os.environ.get("USER", "unknown")

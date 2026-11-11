@@ -43,15 +43,9 @@ else:
             hpc = "frce"
 
     if os.environ.get("HPC_DM_UTILS") is None:
-        if os.environ.get("USER") == "kopardevn":
-            if hpc == "biowulf" or hpc == "helix":
-                os.environ["HPC_DM_UTILS"] = (
-                    "/data/kopardevn/SandBox/HPC_DME_APIs/utils"
-                )
-        else:
-            errorout(
-                msg="HPC_DM_UTILS in unset! ... try... export HPC_DM_UTILS=/path/to/HPC_DME_APIs/utils"
-            )
+        errorout(
+            msg="HPC_DM_UTILS in unset! ... try... export HPC_DM_UTILS=/path/to/HPC_DME_APIs/utils"
+        )
 
     if hpc == "biowulf" or hpc == "helix":
         os.environ["SOURCE_CONDA_CMD"] = (

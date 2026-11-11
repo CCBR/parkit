@@ -10,15 +10,17 @@ Run immediately after `projark deposit` finishes (or up to 60 minutes later if f
 projark ls 982
 ```
 
+Sizes default to exact bytes. Add `--human-readable` for decimal KB, MB, GB.
+
 Expected output:
 
 ```
-Project_CCBR-982  (1.01 TB)
-├── Analysis/  (569.84 GB)
-│   ├── ccbr982.tar_0001                              500.00 GB     Vishal Koparde,260625
-│   └── ccbr982.tar_0002                              69.84 GB      Vishal Koparde,260625
-└── Rawdata/  (465.57 GB)
-    └── ccbr982.tar                                   465.57 GB     Vishal Koparde,240429
+Project_CCBR-982  (1037000000000 B)
+├── Analysis/  (571000000000 B)
+│   ├── ccbr982.tar_0001                              500000000000 B     Vishal Koparde,260625
+│   └── ccbr982.tar_0002                              71000000000 B      Vishal Koparde,260625
+└── Rawdata/  (466000000000 B)
+    └── ccbr982.tar                                   466000000000 B     Vishal Koparde,240429
 ```
 
 !!! note "Index lag"

@@ -1,92 +1,86 @@
-import os
-import subprocess
-from pathlib import Path
+"""Check whether the local HPC_DME_APIs clone is at its expected git ref.
+
+The expected ref is the latest stable ``releases/X.Y.Z`` branch (the
+highest-numbered one merged into ``master``), unless a tag or branch is
+pinned with ``--ref`` or the ``HPC_DME_APIs_REF`` environment variable.
+
+Example:
+    parkit checkapisync
+    parkit checkapisync --ref releases/3.31.0
+"""
+
+from parkit.src.hpcdme_release import (
+    HpcDmeRepoError,
+    current_branch,
+    current_release_version,
+    format_version,
+    head_sha,
+    requested_ref,
+    resolve_repo_path,
+    resolve_sync_target,
+    same_tree,
+)
 
 
-def _run_git(repo, args):
-    proc = subprocess.run(
-        ["git", "-C", str(repo), *args], capture_output=True, text=True
-    )
-    return proc.returncode, proc.stdout.strip(), proc.stderr.strip()
+def check_hpc_dme_apis_sync(repo_override: str = "", ref: str = "") -> int:
+    """Report whether HPC_DME_APIs is in sync with its expected ref.
 
+    Args:
+        repo_override: Optional path to the HPC_DME_APIs repository.
+        ref: Optional tag or branch to compare against; defaults to
+            ``HPC_DME_APIs_REF`` or, failing that, the latest stable release.
 
-def _resolve_repo_path(repo_override=""):
-    if repo_override:
-        return Path(repo_override)
+    Returns:
+        0 when in sync, 1 when out of sync, 2 on configuration errors.
+    """
+    rc = 0
+    try:
+        repo = resolve_repo_path(repo_override=repo_override)
+        print(f"HPC_DME_APIs={repo}")
+        target = resolve_sync_target(repo, requested_ref(ref))
+        local = head_sha(repo)
+        local_version = current_release_version(repo)
+        label = "pinned ref" if target.pinned else "latest stable release"
 
-    env_repo = os.environ.get("HPC_DME_APIs")
-    if env_repo:
-        return Path(env_repo)
+        print(f"branch={current_branch(repo)}")
+        print(f"local={local}")
+        print(f"local_release={format_version(local_version)}")
+        print(f"target={target.name} ({label}, {target.kind})")
+        print(f"target_sha={target.sha}")
+        print(f"target_release={target.version_str}")
 
-    dm_utils = os.environ.get("HPC_DM_UTILS", "")
-    if dm_utils:
-        dm_utils_path = Path(dm_utils)
-        if dm_utils_path.name == "utils":
-            return dm_utils_path.parent
-
-    fallback = Path("/data/kopardevn/SandBox/HPC_DME_APIs")
-    if fallback.exists():
-        return fallback
-
-    return None
-
-
-def check_hpc_dme_apis_sync(repo_override=""):
-    repo = _resolve_repo_path(repo_override=repo_override)
-    if repo is None:
-        print("HPC_DME_APIs is not set and no fallback repo path was found.")
-        return 2
-
-    print(f"HPC_DME_APIs={repo}")
-    if not (repo / ".git").exists():
-        print(f"Not a git repository: {repo}")
-        return 2
-
-    _run_git(repo, ["fetch", "--all", "--prune"])
-    _, branch, _ = _run_git(repo, ["rev-parse", "--abbrev-ref", "HEAD"])
-    rc_local, local, err_local = _run_git(repo, ["rev-parse", "@"])
-    rc_remote, remote, _ = _run_git(repo, ["rev-parse", "@{u}"])
-    rc_base, base, _ = _run_git(repo, ["merge-base", "@", "@{u}"])
-    rc_local_tree, local_tree, _ = _run_git(repo, ["rev-parse", "@^{tree}"])
-    rc_remote_tree, remote_tree, _ = _run_git(repo, ["rev-parse", "@{u}^{tree}"])
-
-    if rc_local != 0:
-        print(f"Could not resolve local HEAD commit: {err_local}")
-        return 2
-
-    print(f"branch={branch}")
-    print(f"local={local}")
-    if rc_remote != 0:
-        print("No upstream tracking branch configured.")
-        return 2
-
-    print(f"remote={remote}")
-    print(f"base={base}")
-
-    if local == remote:
-        print("IN SYNC: local repo matches upstream.")
-        return 0
-
-    # Ignore local merge-only history drift when repository content is identical.
-    # This commonly happens when local pulls create merge commits like:
-    # "Merge branch 'master' of https://github.com/CBIIT/HPC_DME_APIs".
-    if rc_local_tree == 0 and rc_remote_tree == 0 and local_tree == remote_tree:
-        print(
-            "IN SYNC: local history differs, but repository content matches upstream."
-        )
-        return 0
-
-    if rc_base != 0:
-        print("OUT OF SYNC: local and remote differ.")
-        return 1
-
-    if local == base:
-        print("OUT OF SYNC: local repo is behind upstream.")
-        return 1
-
-    if remote == base:
-        print("OUT OF SYNC: local repo is ahead of upstream.")
-        return 1
-
-    print("OUT OF SYNC: local and upstream have diverged.")
-    return 1
+        if local == target.sha:
+            print(f"IN SYNC: local repo is at {target.name}.")
+        elif same_tree(repo, "HEAD", target.sha):
+            print(f"IN SYNC: local history differs, but content matches {target.name}.")
+        elif (
+            not target.pinned
+            and local_version is not None
+            and target.version is not None
+            and local_version > target.version
+        ):
+            print(
+                f"IN SYNC: local release {format_version(local_version)} is newer "
+                f"than the latest stable release {target.version_str}; "
+                "not downgrading."
+            )
+        else:
+            rc = 1
+            if (
+                local_version is not None
+                and target.version is not None
+                and local_version < target.version
+            ):
+                reason = (
+                    f"local release {format_version(local_version)} is older than "
+                    f"{target.name}."
+                )
+            else:
+                reason = f"local repo is not at {target.name}."
+            print(f"OUT OF SYNC: {reason} Run 'parkit syncapi' to update.")
+    except HpcDmeRepoError as exc:
+        rc = exc.exit_code
+        print(f"checkapisync failed: {exc}")
+        if exc.hint:
+            print(f"checkapisync hint: {exc.hint}")
+    return rc

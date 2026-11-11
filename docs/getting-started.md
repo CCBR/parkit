@@ -10,7 +10,7 @@
 If `mamba` is already in your `PATH`, run:
 
 ```bash
-mamba activate /vf/users/CCBR_Pipeliner/db/PipeDB/miniforge3/envs/parkit
+mamba activate /vf/users/CCBR_Pipeliner/db/PipeDB/miniforge3/envs/parkit_3
 ```
 
 If `mamba` is not already in your `PATH`, add the following block to your `~/.bashrc` or `~/.zshrc`:
@@ -33,7 +33,7 @@ unset __mamba_setup
 Then run:
 
 ```bash
-mamba activate /vf/users/CCBR_Pipeliner/db/PipeDB/miniforge3/envs/parkit
+mamba activate /vf/users/CCBR_Pipeliner/db/PipeDB/miniforge3/envs/parkit_3
 ```
 
 ## Required Environment
