@@ -1,6 +1,6 @@
 ## parkit development version
 
-- Default to Java 25 on Helix/Biowulf instead of the unavailable Java 23.0.2 module; `HPC_DM_JAVA_VERSION` still overrides the default. (Issue #82, @kopardev)
+- Default to Java 25 on Helix/Biowulf instead of the unavailable Java 23.0.2 module; `HPC_DM_JAVA_VERSION` still overrides the default. (#82, #83, @kopardev)
 
 ## parkit 3.3.1
 
