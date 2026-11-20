@@ -56,12 +56,12 @@ else:
 
     if os.environ.get("HPC_DM_JAVA_VERSION") is None:
         if hpc == "biowulf" or hpc == "helix":
-            warning("HPC_DM_JAVA_VERSION is not set, setting it to 23.0.2")
+            warning("HPC_DM_JAVA_VERSION is not set, setting it to 25")
             warning(
                 "If you need a different version, please set it explicitly in your environment."
             )
-            os.environ["HPC_DM_JAVA_VERSION"] = "23.0.2"
+            os.environ["HPC_DM_JAVA_VERSION"] = "25"
         else:
             errorout(
-                msg="HPC_DM_JAVA_VERSION in unset! ... try... export HPC_DM_JAVA_VERSION=23.0.2"
+                msg="HPC_DM_JAVA_VERSION in unset! ... try... export HPC_DM_JAVA_VERSION=25"
             )
