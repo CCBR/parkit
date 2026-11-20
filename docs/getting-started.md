@@ -40,7 +40,13 @@ mamba activate /vf/users/CCBR_Pipeliner/db/PipeDB/miniforge3/envs/parkit_3
 
 - `HPC_DME_APIs` repository should be available locally. Follow this setup guide: https://ccbr.github.io/HowTos/docs/HPCDME/setup.html
 - `HPC_DM_UTILS` must resolve to `<HPC_DME_APIs>/utils`.
-- `HPC_DM_JAVA_VERSION` is auto-set on Helix/Biowulf if missing. Minimum required value is `23` (as of today).
+- `HPC_DM_JAVA_VERSION` defaults to `25` on Helix/Biowulf if unset. Set it explicitly to select another available Java module; the minimum required version is `23`.
+
+For example, to select a Java module for one command:
+
+```bash
+HPC_DM_JAVA_VERSION=25 parkit checkapisync
+```
 
 ## Sync Preflight
 

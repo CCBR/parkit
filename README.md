@@ -132,7 +132,7 @@ mamba activate /vf/users/CCBR_Pipeliner/db/PipeDB/miniforge3/envs/parkit_3
 
 - **HPC_DM_UTILS** environmental variable should be preset before calling `parkit`. It also needs to be passed as an argument to `parkit_folder2hpcdme` and `parkit_tarball2hpcdme` end-to-end workflows.
 
-- **HPC_DM_JAVA_VERSION** minimum required value is `23` as of today.
+- **HPC_DM_JAVA_VERSION** defaults to `25` on Helix/Biowulf when unset. Set it explicitly to select another available Java module; the minimum required version is `23`.
 
 - Run all operations from `tmux`, `screen`, or an Open OnDemand graphical session.
 - Disclaimer: Open OnDemand is currently available only on Biowulf compute nodes, not directly on Helix. Since `projark` is Helix-only today, use `tmux`/`screen` on Helix; Open OnDemand support is future-facing until Helix access is available.

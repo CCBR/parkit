@@ -1,5 +1,7 @@
 ## parkit development version
 
+- Default to Java 25 on Helix/Biowulf instead of the unavailable Java 23.0.2 module; `HPC_DM_JAVA_VERSION` still overrides the default. (#82, #83, @kopardev)
+
 ## parkit 3.3.1
 
 - `projark ls` and `parkit ls` now show exact bytes by default. Add `--human-readable` for decimal KB/MB/GB; JSON retains `size_bytes` and uses decimal `size_human`. (#78, #79, @kopardev)
